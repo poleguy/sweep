@@ -2,14 +2,32 @@ After OS installs.
 
 Mount dualie.
 
-sudo apt install sshfs
+    sudo apt install sshfs
+    sudo mkdir /mnt/dualie
+    sudo chown helen:helen /mnt/dualie
+    # sshfs -p 8022 poleguy@dualie.poleguy.com /mnt/dualie
+    sshfs -p 8022 poleguy@192.168.1.110 /mnt/dualie
+    sudo umount /mnt/dualie # if 'Transport endpoint is not connected'
 
-  sudo mkdir /mnt/dualie
+To connect to dualie to peek at cherrytree for notes
 
-  sudo chown helen:helen /mnt/dualie
+    sudo apt install cherrytree
+    cherrytree /mnt/dualie/home/poleguy/data/2020&
+    find node: "#202007131451 ansible for ubuntu"
 
-  # sshfs -p 8022 poleguy@dualie.poleguy.com /mnt/dualie
-  sshfs -p 8022 poleguy@192.168.1.110 /mnt/dualie
-  sudo umount /mnt/dualie # if 'Transport endpoint is not connected'
+Check out ubuntu:
+
+    # https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-ansible-on-ubuntu
+    sudo apt update
+    sudo apt install software-properties-common
+    sudo apt-add-repository --yes --update ppa:ansible/ansible
+    sudo apt install ansible
+    sudo apt install git
+
+Check out classical:
   
-  
+    cd
+    git clone https://github.com/poleguy/classical.git
+    #github@poleguy.com
+    cd classical
+    

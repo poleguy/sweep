@@ -31,3 +31,7 @@ Check out classical:
     #github@poleguy.com
     cd classical
     
+Various:
+    
+    git config --global user.name "Nicholas Dietz"
+    git config --global user.email "github@poleguy.com"

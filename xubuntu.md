@@ -8,6 +8,9 @@ Mount dualie.
     sshfs -p 8080 poleguy@dualie.poleguy.com:/ /mnt/dualie
     # sshfs -p 8080 poleguy@192.168.1.110:/ /mnt/dualie
     sudo umount /mnt/dualie # if 'Transport endpoint is not connected'
+    
+    sudo apt install meld
+    meld ~/.ssh /mnt/dualie/home/poleguy/.ssh
 
 To connect to dualie to peek at cherrytree for notes
 

@@ -3,7 +3,11 @@
 # generate key
 ssh-keygen -t ed25519 -N ""
 
-ssh-copy-id -i ~/.ssh/id_ed25519.pub pinephone@dualie.poleguy.com -p 22
+#won't have password
+#ssh-copy-id -i ~/.ssh/id_ed25519.pub pinephone@dualie.poleguy.com -p 22
+#instead
+scp -P 22 ~/.ssh/id_ed25519.pub poleguy@dualie.poleguy.com:/home/poleguy/.ssh/pinephone_id_ed25519.pub 
+# then copy it into place 
 
 # this puts it here /home/pinephone/.ssh/authorized_keys
 
@@ -14,6 +18,7 @@ ssh-copy-id -i ~/.ssh/id_ed25519.pub pinephone@dualie.poleguy.com -p 22
 # add script to automatically send out a death ping with location (cellular first, then GPS?) before powering off to email and text to maggie.
 
 # set up wireguard
+
 
 
 # notes:

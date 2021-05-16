@@ -1,0 +1,40 @@
+---
+# run with ./local_play 
+# or ./local_play --tags blah
+# or with site_play
+# or via vm/update
+# this is for regular updates
+
+- hosts: local_user
+  user: ansible
+  become: yes
+  become_user: root
+#  serial: 
+#    - 1  # try a batch of one first to limit damage if it fails horribly
+#    - "100%" # then do the rest
+#  ignore_unreachable: true  # to avoid stopping if vms are offline
+
+  roles:
+# must be run first, not alphabetically:
+
+# uncomment as tested and blessed for xubunutu!
+
+#    - role: ntp
+#      tags: ntp
+#    - role: repos
+#      tags: repos
+#      when:
+#        ansible_hostname != 'haydn'
+#    - role: yum_update
+#      delay_reboot: true # don't reboot automatically, as this is rude!
+#      tags: yum_update
+#    - role: users
+#      tags: users
+## alphabetically, to aid in maintenance and avoiding duplicates:
+    - role: pinephone
+      tags: pinephone
+
+
+ # https://stackoverflow.com/questions/34492139/how-to-define-login-user-and-become-root-in-playbook
+ # needs --ask-become-pass on ansible-playbook commandline
+ # or maybe ansible_ssh_private_key_file

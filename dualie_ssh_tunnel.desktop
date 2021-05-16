@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=Dualie SSH Tunnel
-Exec=ssh -R 2322:localhost:22 pinephone@dualie.poleguy.com
+Exec=ssh -R 2322:localhost:22 pinephone@dualie.poleguy.com -p 8022
 Icon=ssh
 Type=Application
 Categories=GTK;GNOME;Utility;

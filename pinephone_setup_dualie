@@ -3,7 +3,7 @@
 sudo useradd -m pinephone
 sudo usermod -s /bin/false pinephone
 
-sudo cp pinephone.conf dualie.poleguy.com:/etc/ssh/sshd_config.d/pinephone.conf
+sudo cp pinephone.conf  /etc/ssh/sshd_config.d/pinephone.conf
 sudo mkdir /home/pinephone/.ssh/
 sudo chmod 700 /home/pinephone/.ssh/
 sudo cp ~/.ssh/pinephone_id_ed25519.pub /home/pinephone/.ssh/

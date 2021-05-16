@@ -7,3 +7,6 @@
     path: /etc/ssh/sshd_config
     backup: yes
     validate: /usr/sbin/sshd -T -f %s
+
+#- name: add desktop launcher
+ 

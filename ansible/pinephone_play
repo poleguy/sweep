@@ -1,0 +1,2 @@
+# run with --tags rolename
+ansible-playbook -i hosts pinephone.yml --connection local -K $@

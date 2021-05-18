@@ -1,5 +1,9 @@
 # put key for pinephone here on pcnidietzn02
 # run on pinephone
+
+# install ansible
+sudo apt install ansible
+
 # generate key
 ssh-keygen -t ed25519 -N ""
 

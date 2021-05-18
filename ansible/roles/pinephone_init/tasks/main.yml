@@ -29,21 +29,21 @@
 #https://stackoverflow.com/questions/65228192/ansible-disable-ssh-password-authentication
 - name: set password login no
   lineinfile:
-    path: '/etc/ssh/shd_config'
+    path: '/etc/ssh/sshd_config'
     regexp: '^(.*)PasswordAuthentication(.*)$'
     line: 'PasswordAuthentication no'
   notify: restart sshd
 
 - name: Disable empty password login
   lineinfile:
-    path: '/etc/ssh/shd_config'
+    path: '/etc/ssh/sshd_config'
     regexp: '^(.*)PermitEmptyPasswords(.*)$'
     line: 'PermitEmptyPasswords no'
   notify: restart sshd
 
 - name: Disable remote root login
   lineinfile:
-    path: '/etc/ssh/shd_config'
+    path: '/etc/ssh/sshd_config'
     regexp: '^(.*)PermitRootLogin(.*)$'
     line: 'PermitRootLogin no'
   notify: restart sshd

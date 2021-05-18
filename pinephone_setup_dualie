@@ -6,4 +6,7 @@ sudo usermod -s /bin/false pinephone
 sudo cp pinephone.conf  /etc/ssh/sshd_config.d/pinephone.conf
 sudo mkdir /home/pinephone/.ssh/
 sudo chmod 700 /home/pinephone/.ssh/
-sudo cp ~/.ssh/pinephone_id_ed25519.pub /home/pinephone/.ssh/
+sudo chown pinephone:pinephone /home/pinephone/.ssh/ -R
+
+# fix this with ansible:
+sudo cp ~/.ssh/pinephone_id_ed25519.pub /home/pinephone/.ssh/authorized_keys

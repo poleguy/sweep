@@ -31,8 +31,8 @@
 #    - role: users
 #      tags: users
 ## alphabetically, to aid in maintenance and avoiding duplicates:
-    - role: pinephone
-      tags: pinephone
+    - role: pinephone_init
+      tags: pinephone_init
 
 
  # https://stackoverflow.com/questions/34492139/how-to-define-login-user-and-become-root-in-playbook

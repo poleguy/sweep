@@ -14,6 +14,7 @@ scp -P 22 ~/.ssh/id_ed25519.pub poleguy@dualie.poleguy.com:/home/poleguy/.ssh/pi
 # create shortcut for poleguy_ssh_tunnel on desktop
 
 #https://wiki.mobian-project.org/doku.php?id=files
+mkdir -p ~/.local/share/applications/
 cp dualie_ssh_tunnel.desktop ~/.local/share/applications/
 
 # set this up to be triggered by an inbound text message...  (to implement find my phone, ring phone even if silent, etc.)
@@ -22,6 +23,10 @@ cp dualie_ssh_tunnel.desktop ~/.local/share/applications/
 
 # set up wireguard
 
+# install sshd on pinephone
+# disable password login
+
+# install xdg-utils for xdg-open
 
 
 # notes:

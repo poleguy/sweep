@@ -1,0 +1,6 @@
+---
+#https://github.com/vitalk/ansible-secure-ssh/blob/master/handlers/main.yml
+- name: restart sshd
+  service: 
+    name: sshd 
+    state: restarted

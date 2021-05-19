@@ -5,4 +5,4 @@
 # local_root ansible_host=localhost ansible_user=root
 # does not set user, as this is to be run with any sudo user
 local_user ansible_host=localhost
-dualie ansible_host=dualie.poleguy.com
+dualie ansible_host=dualie.poleguy.com ansible_user=poleguy

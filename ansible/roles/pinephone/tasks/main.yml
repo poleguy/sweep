@@ -10,3 +10,12 @@
 
 #- name: add desktop launcher
  
+
+#https://serverfault.com/questions/840156/create-non-root-user-and-disable-root-ssh-in-ansible
+# key should have been put in place by script run on phone
+- name: put ssh key in place
+  authorized_key:
+    user: poleguy
+    key: "{{ lookup('file', '~/.ssh/pinephone_id_ed25519.pub') }}"
+    exclusive: no
+

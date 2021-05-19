@@ -1,17 +1,24 @@
-# put key for pinephone here on pcnidietzn02
+# run this first,  before pinephone_setup_dualie
 # run on pinephone
-
-# install ansible
-sudo apt install ansible
 
 # generate key
 ssh-keygen -t ed25519 -N ""
 
-#won't have password
+
 #ssh-copy-id -i ~/.ssh/id_ed25519.pub pinephone@dualie.poleguy.com -p 22
-#instead
+#won't work without password set, instead:
+
+#won't have password, this will prompt for one:
 scp -P 22 ~/.ssh/id_ed25519.pub poleguy@dualie.poleguy.com:/home/poleguy/.ssh/pinephone_id_ed25519.pub 
-# then copy it into place 
+# it will be added to authorized_keys when pinephone_setup_dualie is run
+
+
+# put key for pinephone on dualie
+
+# install ansible
+sudo apt install ansible
+
+
 
 # this puts it here /home/pinephone/.ssh/authorized_keys
 

@@ -15,6 +15,7 @@ scp -P 22 ~/.ssh/id_ed25519.pub poleguy@dualie.poleguy.com:/home/poleguy/.ssh/pi
 
 # this puts it here /home/pinephone/.ssh/authorized_keys
 
+
 # create shortcut for poleguy_ssh_tunnel on desktop
 
 #https://wiki.mobian-project.org/doku.php?id=files

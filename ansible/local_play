@@ -1,2 +1,2 @@
 # run with --tags rolename
-ansible-playbook --limit local_user common.yml -K $@
+ansible-playbook -i hosts --limit local_user common.yml -K $@

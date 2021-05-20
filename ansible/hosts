@@ -4,5 +4,5 @@
 # used with local.yml to implement a svn checkout and update style pull to update laptops on demand
 # local_root ansible_host=localhost ansible_user=root
 # does not set user, as this is to be run with any sudo user
-local_user ansible_host=localhost
+local_user connection=local ansible_host=localhost
 dualie ansible_host=dualie.poleguy.com ansible_user=poleguy

@@ -64,10 +64,10 @@
     state: started
 
 
-- name: put poleguy key on phone
   
 # #https://stackoverflow.com/questions/25505146/how-to-copy-files-between-two-nodes-using-ansible
 # # using rsync_path to avoid using sudo
+# - name: put poleguy key on phone
 #   synchronize:
 #     mode: pull
 #     src: rsync://dualie.poleguy.com/home/poleguy/.ssh/id_ed25519.pub
@@ -78,7 +78,8 @@
 
 # too much magic in synchronize
 #https://github.com/ansible/ansible/issues/5702
-- name: my copy in bin dir
+
+- name: put poleguy key on phone
   command: rsync poleguy@dualie.poleguy.com/home/poleguy/.ssh/id_ed25519.pub /home/mobian/.ssh/dualie_id_ed25519.pub
 #  delegate_to: localhost    
         

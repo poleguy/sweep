@@ -69,10 +69,8 @@
 #https://stackoverflow.com/questions/25505146/how-to-copy-files-between-two-nodes-using-ansible
 # using rsync_path to avoid using sudo
   synchronize:
-    #src: /home/poleguy/.ssh/id_ed25519.pub
-    src: /tmp/blah.txt
-#    dest: /home/mobian/.ssh/dualie_id_ed25519.pub
-    dest: /tmp/blah.txt
+    src: /home/poleguy/.ssh/id_ed25519.pub
+    dest: /home/mobian/.ssh/dualie_id_ed25519.pub
 #    rsync_path: rsync
   delegate_to: dualie
   become: no

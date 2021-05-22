@@ -80,7 +80,7 @@
 #https://github.com/ansible/ansible/issues/5702
 
 - name: put poleguy key on phone
-  command: rsync poleguy@dualie.poleguy.com/home/poleguy/.ssh/id_ed25519.pub /home/mobian/.ssh/dualie_id_ed25519.pub
+  command: rsync poleguy@dualie.poleguy.com:/home/poleguy/.ssh/id_ed25519.pub /home/mobian/.ssh/dualie_id_ed25519.pub
 #  delegate_to: localhost    
         
 #https://serverfault.com/questions/840156/create-non-root-user-and-disable-root-ssh-in-ansible

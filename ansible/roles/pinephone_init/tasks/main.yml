@@ -3,13 +3,13 @@
 
 - name: copy ssh script in place
   file:
-    path: ~/.local/share/applications/
+    path: /home/mobian/.local/share/applications/
     state: directory
 
 - name: copy ssh script in place
   copy:
-    src: ~/sweep/dualie_ssh_tunnel.desktop
-    dest: ~/.local/share/applications/
+    src: /home/mobian/sweep/dualie_ssh_tunnel.desktop
+    dest: /home/mobian/.local/share/applications/
 
 
 

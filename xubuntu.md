@@ -25,9 +25,13 @@ Check out ubuntu:
 Check out classical:
   
     cd
-    #git clone https://github.com/poleguy/classical.git
-    git clone git@github.com:poleguy/classical.git
-    #github@poleguy.com
+    # you won't have a key in place yet, so:
+    git clone https://github.com/poleguy/classical.git
+    # if you do have a key:
+    # git clone git@github.com:poleguy/classical.git
+    # git show origin
+    # git remote set-url origin git@github.com:poleguy/classical.git
+    # github@poleguy.com
     cd classical
 
 To connect to dualie to peek at cherrytree for notes

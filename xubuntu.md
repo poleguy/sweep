@@ -1,5 +1,8 @@
 After OS installs.
 
+    ssh-keygen -t ed25519 -C "poleguy@flippy.poleguy.com"
+    cat ~/.ssh/id_ed25519.pub 
+
 Mount dualie.
 
     sudo apt -y install sshfs

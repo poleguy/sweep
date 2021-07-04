@@ -32,7 +32,7 @@ Check out classical:
     git clone https://github.com/poleguy/classical.git
     # if you do have a key:
     # git clone git@github.com:poleguy/classical.git
-    # git show origin
+    # git remote show origin
     # git remote set-url origin git@github.com:poleguy/classical.git
     # github@poleguy.com
     cd classical

@@ -56,4 +56,10 @@ Setup Yoga 260 disable keyboard on flip
     cd ~/flippy-data/bin
     bash install.sh
     
+Set up .dotfiles
+
+    # to bootstrap a new machine:
+    curl -Lks https://raw.githubusercontent.com/poleguy/dotfiles/master/dotfiles_setup | /bin/bash
+
+    
     

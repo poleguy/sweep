@@ -51,4 +51,9 @@ Various:
 
     sudo apt -y install emacs # snap is newer, but no.
     
-    sudo apt
+Setup Yoga 260 disable keyboard on flip
+
+    cd ~/flippy-data/bin
+    bash install.sh
+    
+    

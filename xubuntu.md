@@ -59,7 +59,15 @@ Setup Yoga 260 disable keyboard on flip
 Set up .dotfiles
 
     # to bootstrap a new machine:
+    cd ~
     curl -Lks https://raw.githubusercontent.com/poleguy/dotfiles/master/dotfiles_setup | /bin/bash
 
+Set up editor for poleguy.com
+
+    # to install:
+    cd ~/flippy-data/2021/poleguy.com/
+    emacs ./install
+    # change anything that looks sketchy
+    source ./install
     
     

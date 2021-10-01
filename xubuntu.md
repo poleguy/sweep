@@ -44,6 +44,12 @@ To connect to dualie to peek at cherrytree for notes
     cherrytree /mnt/dualie/home/poleguy/data/2020&
     find node: "#202007131451 ansible for ubuntu"
 
+
+Set up laptop. This will set up tear-free graphics, laptop keyboard disable for tablet, palm rejection, etc.
+    
+    ./yoga_play 
+
+
 Various:
     
     git config --global user.name "Nicholas Dietz"

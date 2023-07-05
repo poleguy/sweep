@@ -1,0 +1,8 @@
+# /etc/acpi/events/thinkpad-tablet-disabled
+# This is called when the lid is placed in tablet position on
+# Lenovo ThinkPad Yoga 260 Tablet
+# to apply changes:
+# sudo systemctl restart acpid.service
+
+event=video/tabletmode TBLT 0000008A 00000000
+action=su poleguy -c '/usr/local/bin/laptop-mode'

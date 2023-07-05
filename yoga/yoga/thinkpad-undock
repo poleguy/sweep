@@ -1,0 +1,9 @@
+# ln -s /home/poleguy/flippy-data/bin/yoga/thinkpad-undock /etc/acpi/events/thinkpad-undock
+# This is called when undocked
+# Lenovo ThinkPad Yoga 260 Tablet
+# to apply changes:
+# sudo systemctl restart acpid.service
+
+#event=jack/videoout VIDEOOUT unplug
+event=ibm/hotkey LEN0068:00 00000080 00004011
+action=su poleguy -c '/usr/local/bin/touchscreen-undock'

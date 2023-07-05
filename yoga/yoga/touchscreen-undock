@@ -1,0 +1,13 @@
+#! /bin/bash
+# ln -s /home/poleguy/flippy-data/bin/yoga/touchscreen-dock /usr/local/bin/touchscreen-dock
+# ln -s /home/poleguy/flippy-data/bin/yoga/touchscreen-undock /usr/local/bin/touchscreen-undock
+# chmod ugo+x /home/poleguy/flippy-data/bin/yoga/touchscreen
+# chmod ugo+x /home/poleguy/flippy-data/bin/yoga/touchscreen-dock
+# chmod ugo+x /home/poleguy/flippy-data/bin/yoga/touchscreen-undock
+export XAUTHORITY=`ls -1 /home/$USER/.Xauthority | head -n 1`
+export DISPLAY=":`ls -1 /tmp/.X11-unix/ | sed -e s/^X//g | head -n 1`"
+
+
+#sleep 5
+#/home/poleguy/flippy-data/bin/yoga/touchscreen
+echo "for user: $USER responded to tablet undock ACPI event" | systemd-cat

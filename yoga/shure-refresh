@@ -1,0 +1,32 @@
+#!/bin/bash
+# run with sudo
+# to install: sudo ln -s /home/poleguy/flippy-data/bin/shure-refresh /usr/local/bin/shure-refresh
+
+# because otherwise routes won't necessarily work
+# do nothing.
+# see shure notes 2023-03-06
+# notes: https://superuser.com/questions/207453/ssh-and-shell-through-ssh-how-to-exit
+# https://serverfault.com/questions/76875/how-to-run-script-via-ssh-that-doesnt-end-when-i-close-connection
+
+echo "connect to vpn"
+sudo openconnect ssl.shure.com --user=dietzn --authgroup=Anyconnect_Contractors -b --no-dtls --pid-file /tmp/openconnect.pid
+
+#read -n 1 -s -r -p "Press any key to continue"
+
+echo "disconnecting wg and using vpn to restart ssf/wg via wg-fpga vm in niles"
+sudo systemctl stop wg-quick@wg0
+
+echo "waiting a bit so ssh doesn't time out"
+sleep 12
+# use poleguy because he's got the ssh key
+sudo -u poleguy ssh dietzn@192.168.233.45 ./connect_ssf_wg
+
+echo "disconnect vpn."
+sudo kill -2 $(pgrep openconnect)
+
+#read -n 1 -s -r -p "Press any key to continue"
+sudo systemctl start wg-quick@wg0
+
+ping -c 1 haydn.shurelab.com
+
+

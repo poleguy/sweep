@@ -1,0 +1,21 @@
+## why is pytest under pip? because it works that way:
+## https://stackoverflow.com/questions/49154899/resolvepackagenotfound-create-env-using-conda-and-yml-file-on-macos
+
+channels:
+  - defaults
+#  - conda-forge
+dependencies:
+  - python==3.11
+  - pillow
+  - numpy
+#  - matplotlib
+#  - typer
+  - pandas
+#  - pyarrow
+  - pip
+  - pip:
+#    - pyserial
+    - icloudpd
+    - opencv-python
+    - pyautogui
+    - pygame

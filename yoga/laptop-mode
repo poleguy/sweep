@@ -1,0 +1,23 @@
+#! /bin/bash
+# toggle touchpad enabled status when lid changes (lid closed,touchpad off)
+# is run in user context
+# 
+# example rule /etc/acpi/events/thinkpad-lid-close
+# event=button/lid.*
+# action=su tim -c '/home/tim/scripts/lid.sh.post'  
+#
+# see https://askubuntu.com/questions/91534/disable-touchpad-while-the-lid-is-down
+# and https://askubuntu.com/questions/980997/how-do-i-disable-the-touchpad-when-the-lid-is-twisted-or-closed/980999#980999
+# this needs an event defined in /etc/acpi/events to call this script when lid status changes
+# these variables need to be set to use xinput properly
+export XAUTHORITY=`ls -1 /home/poleguy/.Xauthority | head -n 1`
+export DISPLAY=":`ls -1 /tmp/.X11-unix/ | sed -e s/^X//g | head -n 1`"
+
+which python3 |& systemd-cat
+python3 /usr/local/bin/laptop-mode.py |& systemd-cat
+
+echo "laptop mode" |& systemd-cat
+
+# to send messages to /var/log/syslog:
+#| systemd-cat
+# echo "for user: $USER responded to tablet flip ACPI event" | systemd-cat

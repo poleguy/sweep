@@ -1,0 +1,23 @@
+#!/bin/bash
+# run with sudo
+
+# because otherwise routes won't necessarily work
+systemctl stop wg-quick@wg1
+systemctl restart wg-quick@wg0
+
+# prefer local connection
+ping -c 1 local.dualie.poleguy.com
+RESULT=$?
+if [ $RESULT == 0 ]; then
+	wg set wg0 peer aa7x80qni8zoqmpZ8CKyssBG83/rBPz9Xz8MvWbVmFc= endpoint local.dualie.poleguy.com:51820  
+    echo Updated to use local ip
+else
+  #ping -c 1 dualie.poleguy.com
+  #RESULT=$?
+  #if [ $RESULT == 0 ]; then
+	wg set wg0 peer aa7x80qni8zoqmpZ8CKyssBG83/rBPz9Xz8MvWbVmFc= endpoint dualie.poleguy.com:51820  
+    echo Updated to use public ip
+  #else
+#	  echo No update made
+ # fi
+fi

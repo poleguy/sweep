@@ -4,8 +4,7 @@ from zlib import decompress
 import pygame
 
 WIDTH = 1280
-HEIGHT = 1024
-
+HEIGHT = 720
 
 def recvall(conn, length):
     """ Retreive all pixels. """

@@ -21,6 +21,7 @@ def recvall(conn, length):
 
 def main(host='192.168.1.162', port=5000):
     pygame.init()
+    pygame.display.set_allow_screensaver(True)
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     clock = pygame.time.Clock()
     watching = True    

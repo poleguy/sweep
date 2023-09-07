@@ -6,13 +6,13 @@ from mss import mss
 
 
 WIDTH = 1280
-HEIGHT = 1024
+HEIGHT = 720
 
 
-def retreive_screenshot(conn):
-    with mss() as sct:
+def retrieve_screenshot(conn):
+    with mss(with_cursor=True) as sct:
         # The region to capture
-        rect = {'top': 0, 'left': 0, 'width': WIDTH, 'height': HEIGHT}
+        rect = {'top': 0+HEIGHT, 'left': 1280, 'width': WIDTH, 'height': HEIGHT}
 
         while 'recording':
             # Capture the screen
@@ -43,7 +43,7 @@ def main(host='192.168.1.162', port=5000):
         while 'connected':
             conn, addr = sock.accept()
             print('Client connected IP:', addr)
-            thread = Thread(target=retreive_screenshot, args=(conn,))
+            thread = Thread(target=retrieve_screenshot, args=(conn,))
             thread.start()
     finally:
         sock.close()

@@ -55,7 +55,7 @@ def window_around_cursor1():
     # then it limits to the edges of the screen
 
     x,y = get_mouse_position()
-    print(x,y)
+    #print(x,y)
     if x < SERVER_OFFSET+WIDTH/2:
         left = SERVER_OFFSET
     elif x > SERVER_OFFSET + SERVER_WIDTH - WIDTH/2:
@@ -88,7 +88,7 @@ def window_around_cursor():
     
     
     x,y = get_mouse_position()
-    print(last_x, last_y, x, y)
+    #print(last_x, last_y, x, y)
 
     if x < last_x + DEAD_X and x > last_x - DEAD_X:
         # in dead zone
@@ -98,7 +98,7 @@ def window_around_cursor():
         if last_x - x > 0:
             delta = - delta
         x = last_x - delta
-        print(delta)
+        #print(delta)
     x = min(x,SERVER_WIDTH+SERVER_OFFSET)
     x = max(x,0)
     
@@ -113,7 +113,7 @@ def window_around_cursor():
         if last_y - y > 0:
             delta = - delta
         y = last_y - delta
-        print(delta)
+        #print(delta)
     y = min(y,SERVER_HEIGHT)
     y = max(y,0)
 
@@ -161,9 +161,9 @@ def retrieve_screenshot(conn):
 
         while server_running:
             rect = window_around_cursor()
-            print(rect)
+            #print(rect)
             try:
-                print('grab')
+                #print('grab')
                 # Capture the screen
                 img = sct.grab(rect)
                 # Tweak the compression level here (0-9)
@@ -183,9 +183,9 @@ def retrieve_screenshot(conn):
             except Exception as e:
                 raise e
                 print(e)
-                print("yucky yuck")
+                #print("yucky yuck")
                 server_running = False
-        print("thread done")
+        #print("thread done")
 
                 
 
@@ -230,15 +230,15 @@ def main(host='192.168.1.162', port=5000):
         signal.signal(signal.SIGINT, handle_sigint)
 
         while server_running:
-            print("here")
+            #print("here")
             conn, addr = sock.accept()
             print('Client connected IP:', addr)
             #thread = Thread(target=retrieve_screenshot, args=(conn,))
             retrieve_screenshot(conn)
             #thread.start()
-            print("screenhot process done")
+            #print("screenhot process done")
     except KeyboardInterrupt:
-        print('joining thread')
+        #print('joining thread')
         #thread.join()
         pass  # This will handle Ctrl+C gracefully
     finally:

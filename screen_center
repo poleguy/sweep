@@ -1,0 +1,71 @@
+#!/usr/bin/env -S /opt/anaconda/anaconda3/condabin/conda run -p /home/poleguy/flippy-data/2023/sweep/cenv python
+# https://docs.conda.io/projects/conda/en/latest/commands/run.html
+# https://stackoverflow.com/questions/41914739/how-do-i-activate-a-conda-env-in-a-subshell
+
+# find the location of the cursor on screen and pass it to the server process
+import time
+import tkinter
+import json
+
+#from mss import mss
+
+left = 0
+top = 0
+
+FILENAME = "/home/poleguy/flippy-data/2023/sweep/message.txt"
+SERVER_WIDTH = 2560 
+SERVER_HEIGHT = 1440
+SERVER_OFFSET = 1280  # offset due to second screen to the left of main screen
+
+SPEED_SCALE = 80
+
+# teleprompter size (Low resolution, so you don't have to get too close to read.)
+WIDTH = 1280
+HEIGHT = 720
+
+
+#!/usr/bin/env python
+
+"""Get the current mouse position."""
+
+
+lock_file_path = "script_lock.txt"
+
+
+import time
+
+def send_message(message):
+    with open(FILENAME, "w") as file:
+        file.write(message)
+
+
+        
+def get_mouse_position():
+    p = tkinter.Tk()
+    """
+    Get the current position of the mouse.
+
+    Returns
+    -------
+    dict :
+        With keys 'x' and 'y'
+    """
+    x, y = p.winfo_pointerxy()
+    
+    return x,y
+
+    
+def main():
+    # TODO:add a way to modify this behavior to only act when a key is pressed.
+    # possibly by having xfce4 keypress run a program that sends a message to trigger this 
+    
+    x,y = get_mouse_position()
+    msg = json.dumps([x,y])
+    send_message(msg)
+    print(msg)
+    #time.sleep(1)  # Give some time for the first instance to process the message (optional)
+    
+
+        
+if __name__ == '__main__':
+    main()

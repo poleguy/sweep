@@ -1,6 +1,6 @@
 from socket import socket
 from zlib import decompress
-
+import time
 import pygame
 
 WIDTH = 1280
@@ -26,10 +26,10 @@ def main(host='192.168.1.162', port=5000):
     clock = pygame.time.Clock()
     watching = True    
 
-    sock = socket()
     while True:
-        sock.connect((host, port))
         try:
+            sock = socket()
+            sock.connect((host, port))
             while watching:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
@@ -48,6 +48,10 @@ def main(host='192.168.1.162', port=5000):
                 screen.blit(img, (0, 0))
                 pygame.display.flip()
                 clock.tick(60)
+        except Exception as e:
+            print(e)
+            time.sleep(1)
+            pass
         finally:
             sock.close()
 

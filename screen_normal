@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+#xrandr --output eDP1 --reflect x
+echo 308 | sudo tee /sys/class/backlight/intel_backlight/brightness
+
+
+# https://askubuntu.com/questions/149054/how-to-change-lcd-brightness-from-command-line-or-via-script
+
+
+# to get this to run in a noninteractive script (which doesn't source /etc/profile.d/conda.sh)
+# https://stackoverflow.com/questions/52779016/conda-command-working-in-command-prompt-but-not-in-bash-script
+# https://github.com/conda/conda/issues/7980
+# https://stackoverflow.com/questions/55507519/python-activate-conda-env-through-shell-script
+eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
+
+#conda activate ./cenv
+#python screen_recv.py
+
+xrandr --output eDP1 --reflect normal

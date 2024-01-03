@@ -16,23 +16,10 @@ with dev.grab_context():
     
     with dev2.grab_context():
 
-        done = False
         async def print_events(device):
-            global done
-            for i in range(2):
-                print(dev.active_keys())
-                time.sleep(0.1)
-            if not done:
-                done = True
-                ev = evdev.InputEvent(1334414993, 274296, evdev.ecodes.EV_KEY, evdev.ecodes.KEY_B, 1)
-                dev.write_event(ev)
-            for i in range(2):
-                print(dev.active_keys())
-                time.sleep(0.1)
             async for event in device.async_read_loop():
                 #print(device.path, evdev.categorize(event), sep=': ')
                 #print(event)
-                print(event)
 
                 if event.type == evdev.ecodes.EV_KEY:
                     key = evdev.categorize(event)
@@ -106,8 +93,7 @@ with dev.grab_context():
                             print("Hello, world!")
                             
                         if key.keycode == 'KEY_KPENTER':                            
-                            print("Hello, world!")
-
+                            subprocess.Popen('espeak "Merry Christmas, Damian"', shell=True)
 
         
         for device in dev, dev2:
@@ -115,15 +101,3 @@ with dev.grab_context():
         
         loop = asyncio.get_event_loop()
         loop.run_forever()
-
-
-
-    
-        while True:
-            for event in dev2.read_loop():
-                print(event)
-                if event.type == ecodes.EV_KEY:
-                    key = categorize(event)
-                    if key.keystate == key.key_down:
-                        if key.keycode == 'KEY_ESC':
-                            print("Hello, world!")

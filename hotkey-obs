@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# open teams
+
+set -e
+
+# if python-fire window is open, switch to it
+# https://superuser.com/questions/142945/bash-command-to-focus-a-specific-window
+wmctrl -a "OBS " && true
+RC=$?
+
+# https://stackoverflow.com/questions/26675681/how-to-check-the-exit-status-using-an-if-statement
+if [[ "${RC}" == 1 ]]; then
+    echo "starting obs"
+    obs
+fi
+

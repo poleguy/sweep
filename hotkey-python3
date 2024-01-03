@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# keyed to super-0
+set -e
+
+# if python-fire window is open, switch to it
+# https://superuser.com/questions/142945/bash-command-to-focus-a-specific-window
+wmctrl -a python-fire && true
+RC=$?
+
+# https://stackoverflow.com/questions/26675681/how-to-check-the-exit-status-using-an-if-statement
+if [[ "${RC}" == 1 ]]; then
+    echo "starting python"
+    xfce4-terminal --command=python3 --title=python-fire
+    # set terminal window to python3-fire to be unique and easy to script
+fi
+

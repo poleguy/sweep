@@ -58,8 +58,12 @@ def get_teams_status():
             print("Busy")
         elif "Your profile, status Available" in a:
             print("Availabile")
+        elif "Your profile, status In a call" in a:
+            print("In a call")
         else:
+            #print(a)
             print("Error")
+            
 
         ws.close()
 #        print("❌ Could not determine Teams status.")

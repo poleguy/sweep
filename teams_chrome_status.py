@@ -1,5 +1,8 @@
+# run with
+#
+# killall chrome
 # google-chrome·--app=https://teams.microsoft.com·--remote-debugging-port=9222·--remote-allow-origins=http://localhost:9222
-# python3 teams_chrome_status_2.py | grep "Your profile, status Busy"
+# python3 teams_chrome_status.py
 
 import requests
 import websocket

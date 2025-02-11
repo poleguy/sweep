@@ -75,7 +75,8 @@ def move_application(app_name, target_monitor):
         if app_name in line:
             window_id = line.split()[0]
             move_window_to_monitor(window_id, target_monitor)
-            subprocess.run(f"wmctrl -i -r {window_id} -b add,fullscreen", shell=True)
+            #subprocess.run(f"wmctrl -i -r {window_id} -b add,fullscreen", shell=True)
+            subprocess.run(f"wmctrl -i -r {window_id} -b add,maximized_vert,maximized_horz", shell=True)
             break
 
 

@@ -14,7 +14,7 @@ sudo openconnect ssl.shure.com --user=dietzn --authgroup=Anyconnect_Contractors 
 #read -n 1 -s -r -p "Press any key to continue"
 
 echo "disconnecting wg and using vpn to restart ssf/wg via wg-fpga vm in niles"
-sudo systemctl stop wg-quick@wg0
+sudo systemctl stop wg-quick@wg0-vm
 
 echo "waiting a bit so ssh doesn't time out"
 sleep 12
@@ -25,7 +25,7 @@ echo "disconnect vpn."
 sudo kill -2 $(pgrep openconnect)
 
 #read -n 1 -s -r -p "Press any key to continue"
-sudo systemctl start wg-quick@wg0
+sudo systemctl start wg-quick@wg0-vm
 
 ping -c 1 haydn.shurelab.com
 

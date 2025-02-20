@@ -31,8 +31,8 @@ def get_windows_on_monitor(monitor_geometry):
             print(window_id,x,y,width, height, mon_width,mon_height,mon_x_offset,mon_y_offset)
             if weight < 0:
                 print(window_id,"weight is too low")
-            elif is_window_maximized(window_id):
-                print(window_id,"maximized")
+#            elif is_window_maximized(window_id):
+#                print(window_id,"maximized")
             else:
                 windows.append(window_id)
     return windows

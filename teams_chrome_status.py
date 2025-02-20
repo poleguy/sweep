@@ -47,29 +47,122 @@ def get_teams_status():
     if not ws_url:
         return
 
-    try:
-        #print(f"🔌 Connecting to WebSocket: {ws_url}")
-        ws = websocket.WebSocket()
-        ws.connect(ws_url)
+    #print(f"🔌 Connecting to WebSocket: {ws_url}")
+    ws = websocket.WebSocket()
+    ws.connect(ws_url)
 
-        a = get_current_html(ws)
-        #print(a)
-        if "Your profile, status Busy" in a:
-            print("Busy")
-        elif "Your profile, status Available" in a:
-            print("Availabile")
-        elif "Your profile, status In a call" in a:
-            print("In a call")
-        else:
-            #print(a)
-            print("Error")
+    a = get_current_html(ws)
+    status = "Unknown status"
+    #print(a)
+    target = '"Your profile, status '
+    n = len(target)
+    status_idx = a.find(target)
+    if status_idx == -1:
+        print(a)
+        print("Error!")
+
+    status_str = a[status_idx+n:].split('"')[0]
+    
+    
+    if "Busy" in status_str:
+        status = "Busy"
+    elif "Available" in status_str:
+        status = "Available"
+    elif "In a call" in status_str:
+        status = "In a call"
+    else:
+        print(status_str)
+        print("Not handled")
+    #print(status)
+        
+
+    ws.close()
+
+
+    return status
+
+# Thanks Chad Zebedee
+
+import threading
+import time
+import serial
+
+class SerialWriter:
+    def __init__(self, port: str, baudrate: int = 115200, message: str = "Hello", interval: float = 1.0):
+        """
+        Initialize the SerialWriter.
+        :param port: Serial port (e.g., '/dev/ttyUSB0')
+        :param baudrate: Baud rate for communication.
+        :param message: Message to send when on.
+        :param interval: Time interval (in seconds) between messages.
+        """
+        self.port = port
+        self.baudrate = baudrate
+        self.message = message
+        self.interval = interval
+        self.thread = None
+        self.serial_conn = serial.Serial(self.port, self.baudrate, timeout=1)
+        self.led_on = False
+
+    def on(self):
+        """Start writing to the serial port."""
+        self.led_on = True
+
+    def off(self):
+        """Stop writing to the serial port."""
+        self.led_on = False
+
+    def stop(self):
+        """Stop writing to the serial port."""
+        self.off()
+        if self.serial_conn:
+            self.serial_conn.close()
+
+    def write(self):
+        """Internal loop that writes to the serial port at the specified interval."""
+        try:
+            if self.led_on:
+                self.serial_conn.write((self.message + "\n").encode())
+        except serial.SerialException as e:
+            print(f"Serial error: {e}")
+            self.stop()
             
+if __name__ == "__main__":
+    # Run the function
 
-        ws.close()
-#        print("❌ Could not determine Teams status.")
+    # Sending data to the serial port will turn the light on for a couple seconds
+    # The light will go off if serial data stops flowing
+    writer = SerialWriter(port='/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0', message='Hello, Serial!')
+    try:
+        while True:
+            # Run the function
+            status = get_teams_status()
+            led_on_when = ['In a call', 'Busy']
+            if status in led_on_when:
+                print("on")
+                writer.on()
+            else:
+                print("off")
+                writer.off()
 
-    except Exception as e:
-        print(f"🚨 Error connecting to WebSocket: {e}")
+            time.sleep(0.001) # rate limit
+            writer.write()
+            time.sleep(0.100) # rate limit
+            writer.write()
+            time.sleep(0.100) # rate limit
+            writer.write()
+            time.sleep(0.100) # rate limit
+            writer.write()
+            time.sleep(0.100) # rate limit
+            writer.write()
+            time.sleep(0.100) # rate limit
+            writer.write()
+            time.sleep(0.100) # rate limit
+            writer.write()
+    finally:
+        writer.stop()
 
-# Run the function
-get_teams_status()
+
+        
+
+

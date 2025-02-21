@@ -88,7 +88,7 @@ import time
 import serial
 
 class SerialWriter:
-    def __init__(self, port: str, baudrate: int = 115200, message: str = "Hello", interval: float = 1.0):
+    def __init__(self, port: str, baudrate: int = 115200, message: str = "default", interval: float = 1.0):
         """
         Initialize the SerialWriter.
         :param port: Serial port (e.g., '/dev/ttyUSB0')
@@ -123,6 +123,7 @@ class SerialWriter:
         try:
             if self.led_on:
                 self.serial_conn.write((self.message + "\n").encode())
+                #  sleep(0.01)
         except serial.SerialException as e:
             print(f"Serial error: {e}")
             self.stop()
@@ -132,7 +133,7 @@ if __name__ == "__main__":
 
     # Sending data to the serial port will turn the light on for a couple seconds
     # The light will go off if serial data stops flowing
-    writer = SerialWriter(port='/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0', message='Hello, Serial!')
+    writer = SerialWriter(port='/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0', message="Let's use a very long message. Why not? Let's use a very long message. Why not? Let's use a very long message. Why not? Let's use a very long message. Why not?")
     try:
         while True:
             # Run the function
@@ -145,19 +146,7 @@ if __name__ == "__main__":
                 print("off")
                 writer.off()
 
-            time.sleep(0.001) # rate limit
-            writer.write()
-            time.sleep(0.100) # rate limit
-            writer.write()
-            time.sleep(0.100) # rate limit
-            writer.write()
-            time.sleep(0.100) # rate limit
-            writer.write()
-            time.sleep(0.100) # rate limit
-            writer.write()
-            time.sleep(0.100) # rate limit
-            writer.write()
-            time.sleep(0.100) # rate limit
+            time.sleep(0.001) # rate limit causes trouble between 0.1 and 0.2
             writer.write()
     finally:
         writer.stop()

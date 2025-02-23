@@ -4,6 +4,7 @@
 # google-chrome·--app=https://teams.microsoft.com·--remote-debugging-port=9222·--remote-allow-origins=http://localhost:9222
 # python3 teams_chrome_status.py
 
+import signal
 import requests
 import websocket
 import json
@@ -87,8 +88,12 @@ import threading
 import time
 import serial
 
+g_threads = []
+g_running = True
+
 class SerialWriter:
     def __init__(self, port: str, baudrate: int = 115200, message: str = "default", interval: float = 1.0):
+        global g_threads
         """
         Initialize the SerialWriter.
         :param port: Serial port (e.g., '/dev/ttyUSB0')
@@ -100,9 +105,12 @@ class SerialWriter:
         self.baudrate = baudrate
         self.message = message
         self.interval = interval
-        self.thread = None
-        self.serial_conn = serial.Serial(self.port, self.baudrate, timeout=1)
+        self.thread = threading.Thread(target=self._write)
+        g_threads.append(self.thread)        
         self.led_on = False
+        self.running = True
+        self.open_serial()
+        self.thread.start()
 
     def on(self):
         """Start writing to the serial port."""
@@ -117,27 +125,76 @@ class SerialWriter:
         self.off()
         if self.serial_conn:
             self.serial_conn.close()
+        self.running = False
+        #self.thread.join()
 
-    def write(self):
-        """Internal loop that writes to the serial port at the specified interval."""
+    def open_serial(self):
+        self.serial_conn = serial.Serial(self.port, self.baudrate, timeout=1)
         try:
-            if self.led_on:
-                self.serial_conn.write((self.message + "\n").encode())
-                #  sleep(0.01)
+            self.serial_conn.open()
+            if self.serial_conn.isOpen():
+                return True
         except serial.SerialException as e:
-            print(f"Serial error: {e}")
-            self.stop()
+            print("serial exception")
+            pass
             
+
+    def _write(self):
+        """Internal loop that writes to the serial port at the specified interval."""
+        while self.running:
+            try:
+                while self.running:
+                    #if stop_event.is_set():
+                    #    break
+                    while self.led_on:
+                        if self.serial_conn:
+                            self.serial_conn.write((self.message + "\n").encode())
+                        else:
+                            self.open_serial()
+                        #print("...")
+                        time.sleep(0.1)
+                    #print('idle')
+                    time.sleep(0.1)
+            except serial.SerialException as e:
+                print(f"Serial error: {e}")
+                if self.serial_conn:
+                    self.serial_conn.close()
+                    self.serial_conn = None
+                time.sleep(1.0)
+                pass
+                #self.stop()
+        
+            
+        #self.stop()
+        print("closing")        
+        if self.serial_conn:
+            self.serial_conn.close()
+
+
+def handle_kb_interrupt(sig, frame):
+    global g_threads
+    global g_running
+    print("handling interreupt")
+    for t in g_threads:
+        t.running = False
+    g_running = False
+    #stop_event.set()
+
+    
 if __name__ == "__main__":
     # Run the function
 
     # Sending data to the serial port will turn the light on for a couple seconds
     # The light will go off if serial data stops flowing
     writer = SerialWriter(port='/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0', message="Let's use a very long message. Why not? Let's use a very long message. Why not? Let's use a very long message. Why not? Let's use a very long message. Why not?")
+
+    # https://alexandra-zaharia.github.io/posts/how-to-stop-a-python-thread-cleanly/
+    stop_event = threading.Event()
+    signal.signal(signal.SIGINT, handle_kb_interrupt)
     try:
-        while True:
+        while g_running:
             # Run the function
-            status = get_teams_status()
+            status = get_teams_status() # this takes about 400-500msec
             led_on_when = ['In a call', 'Busy']
             if status in led_on_when:
                 print("on")
@@ -146,12 +203,24 @@ if __name__ == "__main__":
                 print("off")
                 writer.off()
 
-            time.sleep(0.001) # rate limit causes trouble between 0.1 and 0.2
-            writer.write()
+            time.sleep(2.0) # no sense hammering it too hard, but we want the light to go on quickly
+            #writer.write()
+#    except KeyboardInterrupt as e:
+#        pass
     finally:
-        writer.stop()
+        #writer.stop()
+        #writer.thread.join()
+        pass
 
+    print("stopping")
+    writer.stop()
 
+    print("done")
+    for t in g_threads:
+        t.join()
+    print("doner")
         
 
 
+
+# https://gist.github.com/vfreex/8904bb57dd751ae078a3b1e3e3f11278

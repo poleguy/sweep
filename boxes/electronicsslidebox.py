@@ -1,0 +1,660 @@
+#git clone git@github.com:florianfesti/boxes.git
+#python setup.py install 
+#step one copy boxes/generators/electronicsbox.py or cardbox.py
+
+
+
+
+#use tests/test_svg.py as a tutorial for now.
+
+#pip install qrcode lxml
+#pytest
+
+#to see if it passes. yup. everything is installed okay.
+
+#initial setup window didn't work. it was mixing pytest python3.11 and python3.12 somehow.
+
+#python
+import boxes
+import boxes.generators
+from pathlib import Path
+
+
+
+class Spring(boxes.Boxes):
+    """Cut a pair of spring slots into it"""
+
+    ui_group = "Part"
+
+    def __init__(self) -> None:        
+        boxes.Boxes.__init__(self)
+        #self.addSettingsArgs(boxes.edges.FlexSettings)
+        self.buildArgParser("x", "y")
+        
+
+    def render(self):
+        x, y = self.x, self.y
+
+        self.moveTo(5, 5)
+        # first side
+        self.edge(6)
+        # todo: how to add an edge type
+        #self.edges["X"](x, y)
+        #self.edges["t"](x)
+        #self.edge(x)
+
+        depth = 8
+        offset = 0
+        angle = 88
+        tip = 0.5
+        self.corner(angle)
+        self.edge(offset)
+        for i in range(3):
+            
+            self.edge(depth)
+            self.corner(-angle)
+            self.edge(tip)
+            self.corner(-angle)
+            self.edge(depth)
+            self.corner(angle)
+            self.edge(3)
+            self.corner(angle)
+
+        self.edge(depth)
+        self.corner(-angle)
+        self.edge(tip)
+        self.corner(-angle)
+        self.edge(depth+offset)
+        self.corner(angle)
+        self.edge(tip)
+
+
+
+        self.edge(1) # end extension bottom
+        self.corner(90)
+        self.edge(y)
+        # other side
+        self.corner(90)
+        
+        self.edge(1+2.5) # end extension + offset to align with bottom edge
+        #self.edge(x + 9)
+        self.corner(angle)
+        self.edge(offset)
+        for i in range(3):
+            
+            self.edge(depth)
+            self.corner(-angle)
+            self.edge(tip)
+            self.corner(-angle)
+            self.edge(depth)
+            self.corner(angle)
+            self.edge(3)
+            self.corner(angle)
+
+        self.edge(depth)
+        self.corner(-angle)
+        self.edge(tip)
+        self.corner(-angle)
+        self.edge(depth+offset)
+        self.corner(angle)
+        self.edge(tip)
+        
+        
+        self.corner(90)
+        self.edge(y)
+        self.corner(90)
+
+
+class InsetEdgeSettings(boxes.edges.Settings):
+    """Settings for InsetEdge"""
+    absolute_params = {
+        "thickness": 0,
+    }
+
+
+class InsetEdge(boxes.edges.BaseEdge):
+    """An edge with space to slide in a lid"""
+    def __call__(self, length, **kw):
+        t = self.settings.thickness
+        self.corner(90)
+        self.edge(t, tabs=2)
+        self.corner(-90)
+        self.edge(length, tabs=2)
+        self.corner(-90)
+        self.edge(t, tabs=2)
+        self.corner(90)
+        
+
+
+class InsetFingerEdge(boxes.edges.BaseEdge):
+    """An edge with fingers to grab a slid in lid"""
+    def __call__(self, length, **kw):
+        t = self.settings.thickness
+        #self.edge(t, tabs=2)
+        
+        #self.edge(length, tabs=2)
+        self.edges["F"](length, tabs=2)
+        #self.edge(t, tabs=2)
+
+
+
+class SupportEdgeSettings(boxes.edges.Settings):
+    """Settings for InsetEdge"""
+    absolute_params = {
+        "thickness": 0,
+        "depth_factor": 2.0,
+        "reversed": False
+    }
+
+
+class SupportEdge(boxes.edges.BaseEdge):
+    """An edge with space to slide in a lid"""
+    def __call__(self, length, **kw):
+        # depth is for depth of cut
+        t = self.settings.thickness
+        depth_factor = self.settings.depth_factor
+        reversed = self.settings.reversed
+
+        count = int(length/(t*2))
+
+        remainder = length - (count-1)*t*2
+
+        # if we can fit one more in and still be low at the end for a length of t, do so
+        # with tolerance
+        if remainder > t*3 - t/100:
+            count+=1
+            remainder -= t*2
+
+
+        self.edge(t, tabs=2)
+        self.corner(-90)
+        self.edge(t*depth_factor, tabs=2)
+        self.corner(90)
+        if not reversed:
+            self.edge(remainder, tabs=2)  # stretch the high edge so the end one is tight
+        else:
+            self.edge(t, tabs=2) 
+        self.corner(90)
+        self.edge(t*depth_factor, tabs=2)
+        self.corner(-90)
+
+
+        for i in range(count-3):
+            self.edge(t, tabs=2)
+            self.corner(-90)
+            self.edge(t*depth_factor, tabs=2)
+            self.corner(90)
+            self.edge(t, tabs=2)
+            self.corner(90)
+            self.edge(t*depth_factor, tabs=2)
+            self.corner(-90)
+
+
+        self.edge(t, tabs=2)
+        self.corner(-90)
+        self.edge(t*depth_factor, tabs=2)
+        self.corner(90)
+        if reversed:
+            self.edge(remainder, tabs=2)  # stretch the high edge so the end one is tight
+        else:
+            self.edge(t, tabs=2) 
+        self.corner(90)
+        self.edge(t*depth_factor, tabs=2)
+        self.corner(-90)
+
+        # end low
+        self.edge(t, tabs=2)
+
+
+
+class ElectronicsSlideBox(boxes.Boxes):
+    """Closed box with screw on top and mounting holes"""
+
+    ui_group = "Box"
+
+    def __init__(self) -> None:
+        boxes.Boxes.__init__(self)
+        self.addSettingsArgs(boxes.edges.FingerJointSettings)
+        self.addSettingsArgs(boxes.edges.FlexSettings)
+        self.buildArgParser("x", "y", "h")
+        self.argparser.add_argument(
+            "--triangle", action="store", type=float, default=25.,
+            help="Sides of the triangles holding the lid in mm")
+        self.argparser.add_argument(
+            "--d1", action="store", type=float, default=2.,
+            help="Diameter of the inner lid screw holes in mm")
+        self.argparser.add_argument(
+            "--d2", action="store", type=float, default=3.,
+            help="Diameter of the lid screw holes in mm")
+        self.argparser.add_argument(
+            "--d3", action="store", type=float, default=3.,
+            help="Diameter of the mounting screw holes in mm")
+        self.argparser.add_argument(
+            "--outsidemounts", action="store", type=boxes.boolarg, default=True,
+            help="Add external mounting points")
+        self.argparser.add_argument(
+            "--holedist", action="store", type=float, default=7.,
+            help="Distance of the screw holes from the wall in mm")
+
+    #inner dimensions of surrounding box (disregarding inlays)
+    @property
+    def boxheight(self):
+        #if self.outside:
+        #    return self.h - 3 * self.thickness
+        return self.h
+
+    def wallxCB(self):
+        t = self.thickness
+        #self.fingerHolesAt(0, self.h-1.5*t, self.triangle, 0)
+        #self.fingerHolesAt(self.x, self.h-1.5*t, self.triangle, 180)
+
+    def wallxFrontCB(self):
+        # opening for slide
+        t = self.thickness
+        #self.fingerHolesAt(0, self.h-1.5*t, self.triangle, 0)
+        #self.fingerHolesAt(self.x, self.h-1.5*t, self.triangle, 180)
+
+        y = self.boxheight
+
+        pos = 0.5 * t
+        pos += self.x + t
+        #self.fingerHolesAt(pos, 0, y, 90)
+
+
+    def wallyCB(self):
+        t = self.thickness
+        #self.fingerHolesAt(0, self.h-1.5*t, self.triangle, 0)
+        #self.fingerHolesAt(self.y, self.h-1.5*t, self.triangle, 180)
+
+    def render(self):
+
+        t = self.thickness
+        self.h = h = self.h + 2*t # compensate for lid
+        x, y, h = self.x, self.y, self.h # outside measurements
+        d1, d2, d3 =self.d1, self.d2, self.d3
+        hd = self.holedist
+        tr = self.triangle
+        trh = tr / 3.
+
+        #if self.outside:
+        #    self.x = x = self.adjustSize(x)
+        #    self.y = y = self.adjustSize(y)
+        #    self.h = h = h - 3*t
+
+
+
+        s = InsetEdgeSettings(thickness=t)
+        p = InsetEdge(self, s)
+        p.char = "a"
+        self.addPart(p)
+        
+        s = InsetEdgeSettings(thickness=t)
+        p = InsetFingerEdge(self, s)
+        p.char = "b"
+        self.addPart(p)
+
+
+        self.rectangularWall(x, h+t, "fFaF", callback=[self.wallxFrontCB],
+                             move="right", label="Front Wall")
+        self.rectangularWall(y, h+t, "ffFf", callback=[self.wallyCB],
+                             move="up", label="Side Wall 1")
+        self.rectangularWall(y, h+t, "ffFf", callback=[self.wallyCB],
+                             label="Side Wall 2")
+        self.rectangularWall(x, h+t, "fFeF", callback=[self.wallxCB],
+                             move="left up", label="Back Wall")
+
+        self.rectangularWall(y, t, "efee", move="up only")
+
+        with self.saved_context():
+            self.rectangularWall(y, t, "eefe", move="right", label="Lip Left")
+            self.rectangularWall(y, t, "feee", move="right", label="Lip Right")
+        
+        self.rectangularWall(y, t * 2, "efee", move="up only")
+
+        support_y_short = y
+        support_y_tall = y
+        support_x_short = x
+        support_x_tall = x
+        support_helper = 15
+
+        fill_factor = 0.3
+        # print an even number of each
+        support_x = int(y/t*fill_factor/2)*2 
+        support_y = int(x/t*fill_factor/2)*2
+
+
+        s = SupportEdgeSettings(thickness=t, depth_factor=1.0)
+        p = SupportEdge(self, s)
+        p.char = "A"
+        self.addPart(p)
+
+        s = SupportEdgeSettings(thickness=t, depth_factor=2.0)
+        p = SupportEdge(self, s)
+        p.char = "B"
+        self.addPart(p)
+
+
+        for i in range(support_y):
+            # https://florianfesti.github.io/boxes/html/api_navigation.html
+            with self.saved_context():
+                self.rectangularWall(support_y_short, t, "eeAe", move="right", label="short")
+                self.rectangularWall(support_y_tall, t*2, "eeAe", move="right", label="tall")        
+            self.rectangularWall(y, t * 3, "eeAe", move="up only")
+
+        for i in range(support_x):
+            with self.saved_context():            
+                self.rectangularWall(support_x_short, t, "eeAe", move="right", label="short")
+                self.rectangularWall(support_x_tall, t, "eeBe", move="right", label="tall")
+                self.rectangularWall(support_helper, t, "eeAe", move="right", label="helper")
+            self.rectangularWall(y, t * 3, "eeBe", move="up only")
+        
+
+        # hold downs around edges
+
+        pcb_thickness = 1.5
+        support_short_thickness = 6
+        spring_compensation = 1 # to compensate for loss of material when cutting spring
+        print(h)        
+        h_inner = h-2*t  # h is defined as the outer dimensions of the box, so compensate 
+        hold_down_height = h_inner - pcb_thickness - support_short_thickness + spring_compensation
+        print(f"hold down height {hold_down_height}")
+
+        s = SupportEdgeSettings(thickness=t, depth_factor=1.0, reversed=True)
+        p = SupportEdge(self, s)
+        p.char = "B"
+        self.addPart(p)
+
+        
+
+        for i in range(2):            
+            with self.saved_context():  
+                # inset to be an inside measurement          
+                #self.rectangularWall(x-2*t, hold_down_height, "eeAe", move="right", label="support x")
+                #flexSettings = boxes.edges.FlexSettings(3, distance=5.0)
+                #s = boxes.edges.FlexSettings(self.thickness, True,
+                #**self.edgesettings.get("Flex", {}))
+
+                #wall_edges = ["f",boxes.edges.FlexEdge(self,s), "A", "e"]
+                #wall_edges = ["f","X", "A", "e"]
+                #self.rectangularWall(y, hold_down_height-t, wall_edges, move="right", label="support y")          
+                #self.render_flex(y,h,1, label="support y")    
+                self.rectangularSpring(y,hold_down_height-2*t, move = "right", label = "middle support y") # tabs should not extend so subtract 2t
+                #self.rectangularWall(y, h, wall_edges, move="right", label="blah")
+                #self.rectangularWall(y, hold_down_height+t, "eeee", move="up only")
+                #box = Spring(self)
+                #self.addPart(box)
+                #self.spring()
+                self.rectangularWall(y, hold_down_height, "eeee", move="right", label="end support y simple") # tabs should not extend so subtract t           
+                self.rectangularSpring(y, hold_down_height-t, "Feee", move="right", label="end support y")            
+                self.rectangularWall(y, t, "eeee", move="up only")
+                self.rectangularWall(x-2*t, t, "Beee", move="right", label="connector x")
+            self.rectangularSpring(y, hold_down_height, move="up only")
+
+        
+        
+
+        if not self.outsidemounts:
+            self.rectangularWall(x, y, "FFFF", callback=[
+            lambda:self.hole(hd, hd, d=d3)] *4, move="right",
+            label="Bottom")
+        else:
+            self.flangedWall(x, y, edges="FFFF",
+                             flanges=[0.0, 2*hd, 0., 2*hd], r=hd,
+                             callback=[
+                    lambda:self.hole(hd, hd, d=d3)] * 4, move='up',
+                    label="Bottom")
+        self.rectangularWall(x, y, "eeee", move='up', label="Top")
+
+
+
+
+        #self.rectangularWall(x - t * .2, y, "eeFe", move="right", label="Lid")
+
+        #self.rectangularWall(x - t * .2, t, "fEeE", move="up", label="Lid Lip")
+
+        #self.rectangularTriangle(tr, tr, "ffe", num=4,
+        #    callback=[None, lambda: self.hole(trh, trh, d=d1)])
+
+    def slot(self, l,w):
+        r = w/2
+        self.corner(90)
+        self.edge(l)
+        self.corner(-180,r)
+        self.edge(l)
+        self.corner(90)
+
+    def rectangularSpring(self, x, y, edges="FeAe",
+                        ignore_widths=[],
+                        holesMargin=None, holesSettings=None,
+                        bedBolts=None, bedBoltSettings=None,
+                        callback=None,
+                        move=None,
+                        label=""):
+        """
+        Rectangular wall for all kind of box like objects
+
+        :param x: width
+        :param y: height
+        :param edges:  (Default value = "eeee") bottom, right, top, left
+        :param ignore_widths: list of edge_widths added to adjacent edge
+        :param holesMargin:  (Default value = None)
+        :param holesSettings:  (Default value = None)
+        :param bedBolts:  (Default value = None)
+        :param bedBoltSettings:  (Default value = None)
+        :param callback:  (Default value = None)
+        :param move:  (Default value = None)
+        :param label: rendered to identify parts, it is not meant to be cut or etched (Default value = "")
+        """
+        if len(edges) != 4:
+            raise ValueError("four edges required")
+        edges = [self.edges.get(e, e) for e in edges]
+        #print(edges)
+        edges += edges  # append for wrapping around
+        overallwidth = x + edges[-1].spacing() + edges[1].spacing()
+        overallheight = y + edges[0].spacing() + edges[2].spacing()
+
+        if self.move(overallwidth, overallheight, move, before=True):
+            return
+
+        w = 1
+        
+        bottom_extra = 3  # to cut away for clearance
+        top_extra = 3 #to establish length
+        offset = 10-w        
+        half_offset = 5-w        
+
+        min_height = offset+half_offset+w+bottom_extra+top_extra
+
+        remainder = y - min_height
+
+        slot_length = x - 5 # to make it even spacing in x and y
+        
+        bottom_extra += remainder
+
+        if 7 not in ignore_widths:
+            self.moveTo(edges[-1].spacing())
+        self.moveTo(0, edges[0].margin())
+        for i, l in enumerate((x, y, x, y)):
+            self.cc(callback, i, y=edges[i].startwidth() + self.burn)
+            e1, e2 = edges[i], edges[i + 1]
+            if (2*i-1 in ignore_widths or
+                2*i-1+8 in ignore_widths):
+                l += edges[i-1].endwidth()
+            if 2*i in ignore_widths:
+                l += edges[i+1].startwidth()
+                e2 = self.edges["e"]
+            if 2*i+1 in ignore_widths:
+                e1 = self.edges["e"]
+
+            if i == 0 or i == 2: # bottom, top
+                edges[i](l,
+                     bedBolts=self.getEntry(bedBolts, i),
+                     bedBoltSettings=self.getEntry(bedBoltSettings, i))
+            elif i == 1:
+                #self.edgeCorner(e1, e2, 90)
+                self.edge(half_offset+bottom_extra)
+                self.slot(slot_length,w)
+                self.edge(offset+top_extra)
+            elif i == 3:
+                #self.edgeCorner(e1, e2, 90)
+                self.edge(half_offset+top_extra)
+                self.slot(slot_length,w)
+                self.edge(offset+bottom_extra)
+
+                        
+            self.edgeCorner(e1, e2, 90)
+
+        #self.render_flex(x,y,1, e1, e2, label="support y")    
+
+        if holesMargin is not None:
+            self.moveTo(holesMargin,
+                        holesMargin + edges[0].startwidth())
+            self.hexHolesRectangle(x - 2 * holesMargin, y - 2 * holesMargin, settings=holesSettings)
+
+        self.move(overallwidth, overallheight, move, label=label)
+
+    def rectangularWall2(self, x, y, edges="eeee",
+                        ignore_widths=[],
+                        holesMargin=None, holesSettings=None,
+                        bedBolts=None, bedBoltSettings=None,
+                        callback=None,
+                        move=None,
+                        label=""):
+        """
+        Rectangular wall for all kind of box like objects
+
+        :param x: width
+        :param y: height
+        :param edges:  (Default value = "eeee") bottom, right, top, left
+        :param ignore_widths: list of edge_widths added to adjacent edge
+        :param holesMargin:  (Default value = None)
+        :param holesSettings:  (Default value = None)
+        :param bedBolts:  (Default value = None)
+        :param bedBoltSettings:  (Default value = None)
+        :param callback:  (Default value = None)
+        :param move:  (Default value = None)
+        :param label: rendered to identify parts, it is not meant to be cut or etched (Default value = "")
+        """
+        if len(edges) != 4:
+            raise ValueError("four edges required")
+        edges = [self.edges.get(e, e) for e in edges]
+        print(edges)
+        edges += edges  # append for wrapping around
+        overallwidth = x + edges[-1].spacing() + edges[1].spacing()
+        overallheight = y + edges[0].spacing() + edges[2].spacing()
+
+        if self.move(overallwidth, overallheight, move, before=True):
+            return
+
+        if 7 not in ignore_widths:
+            self.moveTo(edges[-1].spacing())
+        self.moveTo(0, edges[0].margin())
+
+
+        for i, l in enumerate((x, y, x, y)):
+            self.cc(callback, i, y=edges[i].startwidth() + self.burn)
+            e1, e2 = edges[i], edges[i + 1]
+            if (2*i-1 in ignore_widths or
+                2*i-1+8 in ignore_widths):
+                l += edges[i-1].endwidth()
+            if 2*i in ignore_widths:
+                l += edges[i+1].startwidth()
+                e2 = self.edges["e"]
+            if 2*i+1 in ignore_widths:
+                e1 = self.edges["e"]
+
+            edges[i](l,
+                     bedBolts=self.getEntry(bedBolts, i),
+                     bedBoltSettings=self.getEntry(bedBoltSettings, i))
+            self.edgeCorner(e1, e2, 90)
+
+        if holesMargin is not None:
+            self.moveTo(holesMargin,
+                        holesMargin + edges[0].startwidth())
+            self.hexHolesRectangle(x - 2 * holesMargin, y - 2 * holesMargin, settings=holesSettings)
+
+        self.move(overallwidth, overallheight, move, label=label)
+
+
+    def render_flex(self, x,y,w, e1, e2, label= ""):
+        # a solt of length l, w
+        # 
+        bottom_extra = 6  # to cut away for clearance
+        offset = 10-w        
+        half_offset = 5-w        
+
+        l = x - 5 # to make it even spacing in x and y
+        
+
+        #self.text(label, x/2, y/2, align="middle center", color=boxes.Color.ANNOTATIONS, fontsize=4)
+
+
+        # starting going right.
+        # 90 is a left hand turn
+        #self.edge(x)
+        #e1 = self.edges["e"]
+        self.edges["F"](x) # to allow for easy trimming to clear components
+        
+
+        # right edge
+        #self.corner(90)
+        self.edgeCorner(e1, e2, 90)
+        self.edge(half_offset+bottom_extra)
+        self.slot(l,w)
+        self.edge(offset)
+        self.slot(l,w)
+        self.edge(offset)
+
+        # top edge
+        #self.corner(90)
+        self.edgeCorner(e1, e2, 90)
+        #self.edge(x)
+        #self.edges["e"](x)
+        self.edges["A"](x)
+
+        # left edge
+        #self.corner(90)
+        self.edgeCorner(e1, e2, 90)
+        self.edge(half_offset)
+        self.slot(l,w)
+        self.edge(offset)
+        self.slot(l,w)
+        self.edge(offset+bottom_extra)
+        
+        
+        # final corner
+        #self.corner(90)
+        self.edgeCorner(e1, e2, 90)
+
+        # move to right edge 
+        #self.moveTo(x+self.spacing,0)
+        print("ack")
+
+
+# this was hard to figure out because it has a side-effect of creating boxes.generators.electronicsbox
+#boxes.generators.getAllBoxGenerators()
+# this was hard to figure out. I kept trying box = boxes.genorators.electronicsbox() or other variations
+#box = boxes.generators.electronicsslidebox.ElectronicsSlideBox()
+box = ElectronicsSlideBox()
+#box = boxes.generators.cardbox.CardBox()
+
+
+box.parseArgs(["--x","59",
+               "--y","70",
+               "--h","33",   # 25 above board to clear headers and dupont cables. 1.5 for board thickness. 6 below board. .5 rounding up.
+               "--debug", "True"
+               ])
+#box.parseArgs("")
+box.open()
+box.render()
+boxData = box.close()
+print(boxData.__sizeof__())
+#45977
+file = Path('electronicsbox.svg')
+file.write_bytes(boxData.getvalue())
+#45879
+#exit
+
+#xdg-open electronixbox.svg
+
+

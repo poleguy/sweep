@@ -143,19 +143,42 @@ class SupportEdgeSettings(boxes.edges.Settings):
     absolute_params = {
         "thickness": 0,
         "depth_factor": 2.0,
-        "reversed": False, # put the remainder at the front
-        "odd": False # start with a tooth not a gap (e.g. to hit side supports more firmly)
+        "reversed": False # put the remainder at the front
     }
 
 
+class SupportEdgeSingle(boxes.edges.BaseEdge):
+    """A single toothed edge with no teeth at either edge.
+    To not complicate usual general case.
+    """
+    def __call__(self, length, **kw):
+        # depth is for depth of cut
+        t = self.settings.thickness
+        depth_factor = self.settings.depth_factor
+
+        remainder = t  # extra length needed to fill
+
+        # add gap an tooth
+        self.edge(t, tabs=2) # gap
+        self.corner(-90)
+        self.edge(t*depth_factor, tabs=2)  
+        self.corner(90)
+        self.edge(t, tabs=2) # tooth
+        self.corner(90)
+        self.edge(t*depth_factor, tabs=2)
+        self.corner(-90)
+
+        # end low
+        self.edge(t, tabs=2) # gap
+        
+
 class SupportEdge(boxes.edges.BaseEdge):
-    """An edge with space to slide in a lid"""
+    """A toothed edge with no teeth at either edge"""
     def __call__(self, length, **kw):
         # depth is for depth of cut
         t = self.settings.thickness
         depth_factor = self.settings.depth_factor
         reversed = self.settings.reversed
-        odd = self.settings.odd
 
         count = int(length/(t*2))
 
@@ -168,8 +191,7 @@ class SupportEdge(boxes.edges.BaseEdge):
             remainder -= t*2
 
 
-        if not odd:
-            self.edge(t, tabs=2)
+        self.edge(t, tabs=2)
         self.corner(-90)
         self.edge(t*depth_factor, tabs=2)
         self.corner(90)
@@ -206,20 +228,7 @@ class SupportEdge(boxes.edges.BaseEdge):
         self.corner(-90)
 
         # end low
-        if not odd:
-            self.edge(t, tabs=2)
-        else:
-            self.edge(t, tabs=2)
-            self.corner(-90)
-            self.edge(t*depth_factor, tabs=2)
-            self.corner(90)
-            self.edge(t, tabs=2)
-            self.corner(90)
-            self.edge(t, tabs=2)
-            self.corner(-90)
-            
-            #self.edge(t*depth_factor, tabs=2)
-            #self.corner(90)
+        self.edge(t, tabs=2)
 
 
 class SupportEdgeOdd(boxes.edges.BaseEdge):
@@ -229,7 +238,7 @@ class SupportEdgeOdd(boxes.edges.BaseEdge):
         t = self.settings.thickness
         depth_factor = self.settings.depth_factor
         reversed = self.settings.reversed
-        odd = self.settings.odd
+
 
         count = int(length/(t*2))
 
@@ -406,7 +415,8 @@ class ElectronicsSlideBox(boxes.Boxes):
         support_y_tall = y
         support_x_short = x
         support_x_tall = x
-        support_helper = 15
+        support_helper = 9
+        support_helper_x2 = 15
 
         fill_factor = 0.3
         # print several of each
@@ -425,6 +435,11 @@ class ElectronicsSlideBox(boxes.Boxes):
         p.char = "B"
         self.addPart(p)
 
+        s = SupportEdgeSettings(thickness=t, depth_factor=1.0)
+        p = SupportEdgeSingle(self, s)
+        p.char = "a"
+        self.addPart(p)
+
 
         for i in range(support_n):
             # https://florianfesti.github.io/boxes/html/api_navigation.html
@@ -439,7 +454,8 @@ class ElectronicsSlideBox(boxes.Boxes):
                 self.rectangularWall(support_y_short, t, "eeAe", move="right", label="y support short")
                 self.rectangularWall(support_x_short, t, "eeAe", move="right", label="x support short") # use upside down
                 
-                self.rectangularWall(support_helper, t, "eeAe", move="right", label="helper")
+                self.rectangularWall(support_helper, t, "eeae", move="right", label="1 t")
+                self.rectangularWall(support_helper_x2, t, "eeAe", move="right", label="2 t")
             self.rectangularWall(y, t * 2, "eeBe", move="up only")
         
 
@@ -454,7 +470,7 @@ class ElectronicsSlideBox(boxes.Boxes):
         hold_down_height = h_inner - cross_bars - pcb_thickness - support_short_thickness + spring_compensation
         print(f"hold down height {hold_down_height}")
 
-        s = SupportEdgeSettings(thickness=t, depth_factor=2.0, reversed=True, odd=True)
+        s = SupportEdgeSettings(thickness=t, depth_factor=2.0)
         p = SupportEdgeOdd(self, s)
         p.char = "B"
         self.addPart(p)
@@ -734,8 +750,13 @@ box = ElectronicsSlideBox()
 #box = boxes.generators.cardbox.CardBox()
 
 
-box.parseArgs(["--x","59",
-               "--y","70",
+# should these all be multiples of 3? of 6? of 6+3?
+# 60/72 gives it 1/2 extra mm. but still has double wide teeth
+# 63/75 gives 4/5 extra mm, which is an entire notch too far, but should still work.
+# a little margin might be good, so long as it doesn't fall off the lip. Even 1mm lip should be enough.
+
+box.parseArgs(["--x","63",
+               "--y","75",
                "--h","33",   # 25 above board to clear headers and dupont cables. 1.5 for board thickness. 6 below board. .5 rounding up.
                "--debug", "True"
                ])

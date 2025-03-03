@@ -143,7 +143,8 @@ class SupportEdgeSettings(boxes.edges.Settings):
     absolute_params = {
         "thickness": 0,
         "depth_factor": 2.0,
-        "reversed": False
+        "reversed": False, # put the remainder at the front
+        "odd": False # start with a tooth not a gap (e.g. to hit side supports more firmly)
     }
 
 
@@ -154,6 +155,7 @@ class SupportEdge(boxes.edges.BaseEdge):
         t = self.settings.thickness
         depth_factor = self.settings.depth_factor
         reversed = self.settings.reversed
+        odd = self.settings.odd
 
         count = int(length/(t*2))
 
@@ -166,7 +168,8 @@ class SupportEdge(boxes.edges.BaseEdge):
             remainder -= t*2
 
 
-        self.edge(t, tabs=2)
+        if not odd:
+            self.edge(t, tabs=2)
         self.corner(-90)
         self.edge(t*depth_factor, tabs=2)
         self.corner(90)
@@ -203,7 +206,22 @@ class SupportEdge(boxes.edges.BaseEdge):
         self.corner(-90)
 
         # end low
-        self.edge(t, tabs=2)
+        if not odd:
+            self.edge(t, tabs=2)
+        else:
+            self.edge(t, tabs=2)
+            self.corner(-90)
+            self.edge(t, tabs=2)
+            self.corner(90)
+            self.edge(t, tabs=2)
+            self.corner(90)
+            self.edge(t, tabs=2)
+            self.corner(-90)
+            
+            #self.edge(t*depth_factor, tabs=2)
+            #self.corner(90)
+
+
 
 
 
@@ -318,9 +336,10 @@ class ElectronicsSlideBox(boxes.Boxes):
         support_helper = 15
 
         fill_factor = 0.3
-        # print an even number of each
+        # print several of each
         support_x = int(y/t*fill_factor/2)*2 
         support_y = int(x/t*fill_factor/2)*2
+        support_n = max(support_x,support_y) # more is better
 
 
         s = SupportEdgeSettings(thickness=t, depth_factor=1.0)
@@ -334,32 +353,35 @@ class ElectronicsSlideBox(boxes.Boxes):
         self.addPart(p)
 
 
-        for i in range(support_y):
+        for i in range(support_n):
             # https://florianfesti.github.io/boxes/html/api_navigation.html
-            with self.saved_context():
-                self.rectangularWall(support_y_short, t, "eeAe", move="right", label="short")
-                self.rectangularWall(support_y_tall, t*2, "eeAe", move="right", label="tall")        
+            with self.saved_context(): # group tall ones for optimal printing
+                self.rectangularWall(support_y_tall, t*2, "eeAe", move="right", label="y support tall")        
+                self.rectangularWall(support_x_tall, t, "eeBe", move="right", label="x support tall") # use upside down
             self.rectangularWall(y, t * 3, "eeAe", move="up only")
+        #self.rectangularWall(y, t * 3, "eeAe", move="up only")
 
         for i in range(support_x):
             with self.saved_context():            
-                self.rectangularWall(support_x_short, t, "eeAe", move="right", label="short")
-                self.rectangularWall(support_x_tall, t, "eeBe", move="right", label="tall")
+                self.rectangularWall(support_y_short, t, "eeAe", move="right", label="y support short")
+                self.rectangularWall(support_x_short, t, "eeAe", move="right", label="x support short") # use upside down
+                
                 self.rectangularWall(support_helper, t, "eeAe", move="right", label="helper")
-            self.rectangularWall(y, t * 3, "eeBe", move="up only")
+            self.rectangularWall(y, t * 2, "eeBe", move="up only")
         
 
         # hold downs around edges
 
+        cross_bars = 3
         pcb_thickness = 1.5
         support_short_thickness = 6
         spring_compensation = 1 # to compensate for loss of material when cutting spring
         print(h)        
         h_inner = h-2*t  # h is defined as the outer dimensions of the box, so compensate 
-        hold_down_height = h_inner - pcb_thickness - support_short_thickness + spring_compensation
+        hold_down_height = h_inner - cross_bars - pcb_thickness - support_short_thickness + spring_compensation
         print(f"hold down height {hold_down_height}")
 
-        s = SupportEdgeSettings(thickness=t, depth_factor=1.0, reversed=True)
+        s = SupportEdgeSettings(thickness=t, depth_factor=1.0, reversed=True, odd=True)
         p = SupportEdge(self, s)
         p.char = "B"
         self.addPart(p)
@@ -378,16 +400,16 @@ class ElectronicsSlideBox(boxes.Boxes):
                 #wall_edges = ["f","X", "A", "e"]
                 #self.rectangularWall(y, hold_down_height-t, wall_edges, move="right", label="support y")          
                 #self.render_flex(y,h,1, label="support y")    
-                self.rectangularSpring(y,hold_down_height-2*t, move = "right", label = "middle support y") # tabs should not extend so subtract 2t
+                #self.rectangularSpring(y,hold_down_height-2*t, move = "right", label = "middle support y") # tabs should not extend so subtract 2t
                 #self.rectangularWall(y, h, wall_edges, move="right", label="blah")
                 #self.rectangularWall(y, hold_down_height+t, "eeee", move="up only")
                 #box = Spring(self)
                 #self.addPart(box)
                 #self.spring()
-                self.rectangularWall(y, hold_down_height, "eeee", move="right", label="end support y simple") # tabs should not extend so subtract t           
-                self.rectangularSpring(y, hold_down_height-t, "Feee", move="right", label="end support y")            
+                self.rectangularWall(y, hold_down_height, "eeee", move="right", label="end support y simple") # for size check
+                self.rectangularSpring(y, hold_down_height-t, "Feee", move="right", label="end support y") # as simple as possible
                 self.rectangularWall(y, t, "eeee", move="up only")
-                self.rectangularWall(x-2*t, t, "Beee", move="right", label="connector x")
+                self.rectangularWall(x-2*t, t, "Beee", move="right", label="connector x") # short by 2*t to slide straight down from top and clear side lips.
             self.rectangularSpring(y, hold_down_height, move="up only")
 
         

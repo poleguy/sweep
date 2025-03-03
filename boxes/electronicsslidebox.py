@@ -211,7 +211,7 @@ class SupportEdge(boxes.edges.BaseEdge):
         else:
             self.edge(t, tabs=2)
             self.corner(-90)
-            self.edge(t, tabs=2)
+            self.edge(t*depth_factor, tabs=2)
             self.corner(90)
             self.edge(t, tabs=2)
             self.corner(90)
@@ -221,6 +221,79 @@ class SupportEdge(boxes.edges.BaseEdge):
             #self.edge(t*depth_factor, tabs=2)
             #self.corner(90)
 
+
+class SupportEdgeOdd(boxes.edges.BaseEdge):
+    """An edge with space to slide in a lid"""
+    def __call__(self, length, **kw):
+        # depth is for depth of cut
+        t = self.settings.thickness
+        depth_factor = self.settings.depth_factor
+        reversed = self.settings.reversed
+        odd = self.settings.odd
+
+        count = int(length/(t*2))
+
+        remainder = length - (count-1)*t*2
+
+        # if we can fit one more in and still be low at the end for a length of t, do so
+        # with tolerance
+        if remainder > t*3 - t/100:
+            count+=1
+            remainder -= t*2
+
+
+        #if not odd:
+        #    self.edge(t, tabs=2)
+        #self.corner(-90)
+        #self.edge(t*depth_factor, tabs=2)
+        #self.corner(90)
+        if not reversed:
+            self.edge(remainder, tabs=2)  # stretch the high edge so the end one is tight
+        else:
+            self.edge(t, tabs=2) 
+        self.corner(90)
+        self.edge(t*depth_factor, tabs=2)
+        self.corner(-90)
+
+
+        for i in range(count-3):
+            self.edge(t, tabs=2)
+            self.corner(-90)
+            self.edge(t*depth_factor, tabs=2)
+            self.corner(90)
+            self.edge(t, tabs=2)
+            self.corner(90)
+            self.edge(t*depth_factor, tabs=2)
+            self.corner(-90)
+
+
+        self.edge(t, tabs=2)
+        self.corner(-90)
+        self.edge(t*depth_factor, tabs=2)
+        self.corner(90)
+        if reversed:
+            self.edge(remainder, tabs=2)  # stretch the high edge so the end one is tight
+        else:
+            self.edge(t, tabs=2) 
+        self.corner(90)
+        self.edge(t*depth_factor, tabs=2)
+        self.corner(-90)
+
+        # end low
+        #if not odd:
+        #    self.edge(t, tabs=2)
+        #else:
+        self.edge(t, tabs=2)
+        self.corner(-90)
+        self.edge(t*depth_factor, tabs=2)
+        self.corner(90)
+        self.edge(t, tabs=2)
+        #self.corner(90)
+        #self.edge(t, tabs=2)
+        #self.corner(-90)
+        
+        #self.edge(t*depth_factor, tabs=2)
+        #self.corner(90)
 
 
 
@@ -381,8 +454,8 @@ class ElectronicsSlideBox(boxes.Boxes):
         hold_down_height = h_inner - cross_bars - pcb_thickness - support_short_thickness + spring_compensation
         print(f"hold down height {hold_down_height}")
 
-        s = SupportEdgeSettings(thickness=t, depth_factor=1.0, reversed=True, odd=True)
-        p = SupportEdge(self, s)
+        s = SupportEdgeSettings(thickness=t, depth_factor=2.0, reversed=True, odd=True)
+        p = SupportEdgeOdd(self, s)
         p.char = "B"
         self.addPart(p)
 
@@ -409,7 +482,7 @@ class ElectronicsSlideBox(boxes.Boxes):
                 self.rectangularWall(y, hold_down_height, "eeee", move="right", label="end support y simple") # for size check
                 self.rectangularSpring(y, hold_down_height-t, "Feee", move="right", label="end support y") # as simple as possible
                 self.rectangularWall(y, t, "eeee", move="up only")
-                self.rectangularWall(x-2*t, t, "Beee", move="right", label="connector x") # short by 2*t to slide straight down from top and clear side lips.
+                self.rectangularWall(x-2*t, 3*t, "Beee", move="right", label="connector x") # short by 2*t to slide straight down from top and clear side lips.
             self.rectangularSpring(y, hold_down_height, move="up only")
 
         

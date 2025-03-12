@@ -231,8 +231,47 @@ class SupportEdge(boxes.edges.BaseEdge):
         self.edge(t, tabs=2)
 
 
+class SupportEdgeHoldDown(boxes.edges.BaseEdge):
+    """A toothed edge with teeth at either edge, and a double tooth at the middle
+    To hold down one or two PCBs and clear components.
+    """
+    def __call__(self, length, **kw):
+        # depth is for depth of cut
+        t = self.settings.thickness
+        depth_factor = self.settings.depth_factor
+        
+
+        half = length/2
+
+        gap_width = half - t*4 # double wide tooth at either end of either half
+
+        # start with tooth
+        self.edge(t*2, tabs=2) #double wide tooth 
+        self.corner(90)
+        self.edge(t*depth_factor, tabs=2)
+        self.corner(-90)        
+        
+        self.edge(gap_width, tabs=2) # gap
+        
+        self.corner(-90)
+        self.edge(t*depth_factor, tabs=2)
+        self.corner(90)
+        self.edge(t*2*2, tabs=2) #double-double wide tooth 
+        self.corner(90)
+        self.edge(t*depth_factor, tabs=2)
+        self.corner(-90)
+        
+        self.edge(gap_width, tabs=2) # gap
+
+        self.corner(-90)
+        self.edge(t*depth_factor, tabs=2)
+        self.corner(90)
+        self.edge(t*2, tabs=2) #double wide tooth 
+
+
+
 class SupportEdgeOdd(boxes.edges.BaseEdge):
-    """An edge with space to slide in a lid"""
+    """A toothed edge with teeth right at either edge to press on sides"""
     def __call__(self, length, **kw):
         # depth is for depth of cut
         t = self.settings.thickness
@@ -368,9 +407,8 @@ class ElectronicsSlideBox(boxes.Boxes):
 
     def render(self):
 
-        t = self.thickness
-        self.h = h = self.h + 2*t # compensate for lid
-        x, y, h = self.x, self.y, self.h # outside measurements
+        t = self.thickness        
+        x, y, h = self.x, self.y, self.h # all inside measurements
         d1, d2, d3 =self.d1, self.d2, self.d3
         hd = self.holedist
         tr = self.triangle
@@ -461,42 +499,43 @@ class ElectronicsSlideBox(boxes.Boxes):
 
         # hold downs around edges
 
-        cross_bars = 3
-        pcb_thickness = 1.5
+        connector_x = 3
+        target_pcb_thickness = 1.3 # at target compression (compromise between 1.0 and 1.5 of actual boards)
         support_short_thickness = 6
-        spring_compensation = 1 # to compensate for loss of material when cutting spring
-        print(h)        
-        h_inner = h-2*t  # h is defined as the outer dimensions of the box, so compensate 
-        hold_down_height = h_inner - cross_bars - pcb_thickness - support_short_thickness + spring_compensation
+        # the wall will be shorter than nominal since material is removed.
+        # It wil be able to compress the full 2mm down from the nominal.
+        # so the range of compression should be 1mm-2mm below nominal.
+        # let's target having it at almost full compression with a 1.5mm board 
+        # and still some compression with a 1mm board.
+        # It's easier to remove material with a file, saw, planer than add it.
+        max_spring_compression = 2.0
+        min_spring_compression = 0.2
+        target_spring_compression = 1.0 # compression in mm with target pcb thickness (max is 1x depth of cut: 2mm) (half compressed)
+        print(f"x y h {x} {y} {h}")        
+        print(f"connector_x {connector_x}")
+        print(f"support_short_thickness {support_short_thickness}")
+        # h is defined as the inner dimensions of the box, so compensate 
+        hold_down_height = h - target_pcb_thickness - connector_x - support_short_thickness + target_spring_compression
         print(f"hold down height {hold_down_height}")
+        # at max limit, target limit, and minimum
+        print(f"board thickness compression limits: {h-hold_down_height-connector_x-support_short_thickness+max_spring_compression:0.2f} {h-hold_down_height-connector_x-support_short_thickness:0.2f}")
 
         s = SupportEdgeSettings(thickness=t, depth_factor=2.0)
         p = SupportEdgeOdd(self, s)
         p.char = "B"
         self.addPart(p)
 
-        
 
-        for i in range(2):            
+        s = SupportEdgeSettings(thickness=t, depth_factor=1.0)
+        p = SupportEdgeHoldDown(self, s)
+        p.char = "A"
+        self.addPart(p)
+
+
+        for i in range(4):            
             with self.saved_context():  
-                # inset to be an inside measurement          
-                #self.rectangularWall(x-2*t, hold_down_height, "eeAe", move="right", label="support x")
-                #flexSettings = boxes.edges.FlexSettings(3, distance=5.0)
-                #s = boxes.edges.FlexSettings(self.thickness, True,
-                #**self.edgesettings.get("Flex", {}))
-
-                #wall_edges = ["f",boxes.edges.FlexEdge(self,s), "A", "e"]
-                #wall_edges = ["f","X", "A", "e"]
-                #self.rectangularWall(y, hold_down_height-t, wall_edges, move="right", label="support y")          
-                #self.render_flex(y,h,1, label="support y")    
-                #self.rectangularSpring(y,hold_down_height-2*t, move = "right", label = "middle support y") # tabs should not extend so subtract 2t
-                #self.rectangularWall(y, h, wall_edges, move="right", label="blah")
-                #self.rectangularWall(y, hold_down_height+t, "eeee", move="up only")
-                #box = Spring(self)
-                #self.addPart(box)
-                #self.spring()
-                self.rectangularWall(y, hold_down_height, "eeee", move="right", label="end support y simple") # for size check
-                self.rectangularSpring(y, hold_down_height-t, "Feee", move="right", label="end support y") # as simple as possible
+                #self.rectangularWall(y, hold_down_height, "eeee", move="right", label="end support y simple") # for size check
+                self.rectangularSpring(y, hold_down_height, "Aeee", move="right", label="hold down y") # as simple as possible
                 self.rectangularWall(y, t, "eeee", move="up only")
                 self.rectangularWall(x-2*t, 3*t, "Beee", move="right", label="connector x") # short by 2*t to slide straight down from top and clear side lips.
             self.rectangularSpring(y, hold_down_height, move="up only")
@@ -514,7 +553,7 @@ class ElectronicsSlideBox(boxes.Boxes):
                              callback=[
                     lambda:self.hole(hd, hd, d=d3)] * 4, move='up',
                     label="Bottom")
-        self.rectangularWall(x, y, "eeee", move='up', label="Top")
+        self.rectangularWall(x, y+t, "eeee", move='up', label="Top") # long enough to cover front lip
 
 
 
@@ -567,18 +606,18 @@ class ElectronicsSlideBox(boxes.Boxes):
         if self.move(overallwidth, overallheight, move, before=True):
             return
 
-        w = 1
+        w = 2 # gap between spring arms
         
         bottom_extra = 3  # to cut away for clearance
         top_extra = 3 #to establish length
-        offset = 10-w        
-        half_offset = 5-w        
+        offset = 12-w        
+        half_offset = 6-w        
 
         min_height = offset+half_offset+w+bottom_extra+top_extra
 
         remainder = y - min_height
 
-        slot_length = x - 5 # to make it even spacing in x and y
+        slot_length = x - 6 # to make it even spacing in x and y
         
         bottom_extra += remainder
 
@@ -755,10 +794,12 @@ box = ElectronicsSlideBox()
 # 63/75 gives 4/5 extra mm, which is an entire notch too far, but should still work.
 # a little margin might be good, so long as it doesn't fall off the lip. Even 1mm lip should be enough.
 
-box.parseArgs(["--x","63",
-               "--y","75",
-               "--h","33",   # 25 above board to clear headers and dupont cables. 1.5 for board thickness. 6 below board. .5 rounding up.
-               "--debug", "True"
+# back to original dimensions to try to not waste the original print
+# all inner dimensions:
+box.parseArgs(["--x","59",
+               "--y","70",
+               "--h","39",   # 31 above board to clear headers and dupont cables. 1.5 for board thickness. 6 below board. .5 rounding up. 
+               "--debug", "False"
                ])
 #box.parseArgs("")
 box.open()

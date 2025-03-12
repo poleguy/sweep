@@ -20,10 +20,10 @@ def get_teams_debugger_url():
         
         for tab in tabs:
             if "teams.microsoft.com" in tab.get("url", ""):
-                #print(f"✅ Found Teams tab: {tab['url']}")
+                #print(f"Found Teams tab: {tab['url']}")
                 return tab.get("webSocketDebuggerUrl")
 
-        print("❌ Teams is not open in Chrome.")
+        print("Teams is not open in Chrome.")
         return None
     except Exception as e:
         print(f"Error fetching debugger URL: {e}")
@@ -195,7 +195,8 @@ if __name__ == "__main__":
         while g_running:
             # Run the function
             status = get_teams_status() # this takes about 400-500msec
-            led_on_when = ['In a call', 'Busy']
+#            led_on_when = ['In a call', 'Busy']
+            led_on_when = ['In a call']
             if status in led_on_when:
                 print("on")
                 writer.on()

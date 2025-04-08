@@ -31,11 +31,19 @@ def get_windows_on_monitor(monitor_geometry):
             print(window_id,x,y,width, height, mon_width,mon_height,mon_x_offset,mon_y_offset)
             if weight < 0:
                 print(window_id,"weight is too low")
-#            elif is_window_maximized(window_id):
-#                print(window_id,"maximized")
+            elif is_window_maximized(window_id):
+                print(window_id,"maximized")
+                unmaximize_window(window_id)
+                windows.append(window_id)
             else:
                 windows.append(window_id)
     return windows
+
+def unmaximize_window(window_id):
+    cmd = f"wmctrl -ir {window_id} -b remove,maximized_vert,maximized_horz"
+    print(cmd)
+    subprocess.run(cmd, shell=True)
+
 
 def move_window_to_monitor(window_id, target_geometry):
     """Move a window to the target monitor."""
@@ -48,6 +56,7 @@ def move_windows_to_monitor(source_monitor, target_monitor):
     """Move all windows from source monitor to target monitor."""
     windows = get_windows_on_monitor(source_monitor)
     for window in windows:
+        print(f"moving {window}")
         move_window_to_monitor(window, target_monitor)
 
 def launch_and_move_application(app_name, target_monitor):
@@ -74,6 +83,7 @@ def move_application(app_name, target_monitor):
         print(line)
         if app_name in line:
             window_id = line.split()[0]
+            unmaximize_window(window_id)
             move_window_to_monitor(window_id, target_monitor)
             #subprocess.run(f"wmctrl -i -r {window_id} -b add,fullscreen", shell=True)
             subprocess.run(f"wmctrl -i -r {window_id} -b add,maximized_vert,maximized_horz", shell=True)

@@ -4,6 +4,12 @@
 # google-chrome·--app=https://teams.microsoft.com·--remote-debugging-port=9222·--remote-allow-origins=http://localhost:9222
 # python3 teams_chrome_status.py
 
+# run from?
+
+# if you see:
+# Error fetching debugger URL: HTTPConnectionPool(host='localhost', port=9222): Max retries exceeded with url: /json (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7921622ab150>: Failed to establish a new connection: [Errno 111] Connection refused'))
+# adjust ~/flippy-data/2023/reamp/hotkey-teams
+
 import signal
 import requests
 import websocket
@@ -195,13 +201,13 @@ if __name__ == "__main__":
         while g_running:
             # Run the function
             status = get_teams_status() # this takes about 400-500msec
-#            led_on_when = ['In a call', 'Busy']
-            led_on_when = ['In a call']
+            #led_on_when = ['In a call', 'Busy'] # for testing
+            led_on_when = ['In a call', 'Presenting']
             if status in led_on_when:
-                print("on")
+                print(f"on: {status}")
                 writer.on()
             else:
-                print("off")
+                print(f"off: {status}")
                 writer.off()
 
             time.sleep(2.0) # no sense hammering it too hard, but we want the light to go on quickly

@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Sunglasses Overlay",
+  "version": "1.0",
+  "description": "Detect faces in videos and put sunglasses on them.",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": ["<all_urls>"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["face-api.min.js", "content.js"],
+      "css": ["content.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["sunglasses.png", "models/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

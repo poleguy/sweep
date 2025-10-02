@@ -1,4 +1,5 @@
-(async () => {
+// content.js
+setTimeout(async () => {
   const MODEL_PATH = chrome.runtime.getURL("models");
   const SUNGLASSES_SRC = chrome.runtime.getURL("sunglasses.png");
 
@@ -91,4 +92,4 @@
       v.addEventListener("loadeddata", () => attachOverlay(v), { once: true });
     }
   });
-})();
+}, 1000); // <-- wait x msec before starting to avoid things moving about

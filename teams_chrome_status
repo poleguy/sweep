@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+source scripts/activate_python
+python teams_chrome_status.py

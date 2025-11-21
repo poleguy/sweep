@@ -1,3 +1,16 @@
 #!/usr/bin/env bash
-source scripts/activate_python
-python teams_chrome_status.py
+
+# maybe run with: xfce4-terminal -x bash -c "~/flippy-data/sweep/teams_chrome_status"
+
+# similar to remap: https://github.com/poleguy/remap
+
+# get to script directory
+cd "$(dirname "$0")"
+
+# https://stackoverflow.com/questions/79244510/xfce4-terminal-cannot-be-killed
+# run this so that it blocks by using disable-server, so that systemd won't run a bunch of them, but
+# can restart if it ever exits
+# note this will put a spurious message in systemd status:
+# Nov 21 11:42:10 elgar xfce4-terminal[809717]: Failed to connect to session manager: Failed to connect to the session manager: SESSION_MANAGER environment variable not defined
+
+xfce4-terminal --disable-server -x bash -c "source scripts/activate_python; python -m teams_chrome_status" 

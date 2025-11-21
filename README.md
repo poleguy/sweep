@@ -6,6 +6,16 @@ public so it's easy to get
 
 secrets aren't saved here
 
+## install teams_chrome_status
+
+Set it up to start at bootup. 
+```
+sudo cp teams_chrome_status.service /etc/systemd/system/
+sudo systemctl daemon-reload 
+sudo systemctl start teams_chrome_status.service
+```
+
+
 ## setup:
 
 ``` bash

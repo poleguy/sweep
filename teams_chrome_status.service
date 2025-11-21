@@ -1,0 +1,26 @@
+# see readme.md for install instructions
+# https://unix.stackexchange.com/questions/537628/error-cannot-open-display-on-systemd-service-which-needs-graphical-interface
+
+# service runs but still not working. can't talk to display?
+# https://stackoverflow.com/questions/65885186/systemd-run-script-after-wakeup-cant-open-display
+
+
+[Unit]
+Description=Teams Chrome Status
+After=network.target
+
+[Service]
+Type=simple
+User=poleguy
+ExecStart=/home/poleguy/flippy-data/sweep/teams_chrome_status
+Restart=always  
+Environment="DISPLAY=:0"
+Environment="XAUTHORITY=/home/poleguy/.Xauthority"
+Environment="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
+Environment="XDG_RUNTIME_DIR=/run/user/1000"
+
+[Install]
+#WantedBy=multi-user.target # doesn't start at boot?
+WantedBy=graphical.target
+
+#WantedBy=xsession.target

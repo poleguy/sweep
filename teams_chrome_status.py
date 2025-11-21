@@ -32,7 +32,8 @@ def get_teams_debugger_url():
         print("Teams is not open in Chrome.")
         return None
     except Exception as e:
-        print(f"Error fetching debugger URL: {e}")
+        #print(f"Error fetching debugger URL: {e}")
+        print("Trouble fetching debugger URL, maybe teams is not running yet?")
         return None
 
 
@@ -65,8 +66,8 @@ def get_teams_status():
     n = len(target)
     status_idx = a.find(target)
     if status_idx == -1:
-        print(a)
-        print("Error!")
+        #print(a)
+        print("Warning, target not found in html. Maybe teams is restarting.")
 
     status_str = a[status_idx+n:].split('"')[0]
     
@@ -195,37 +196,39 @@ if __name__ == "__main__":
     writer = SerialWriter(port='/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0', message="Let's use a very long message. Why not? Let's use a very long message. Why not? Let's use a very long message. Why not? Let's use a very long message. Why not?")
 
     # https://alexandra-zaharia.github.io/posts/how-to-stop-a-python-thread-cleanly/
-    stop_event = threading.Event()
+    #stop_event = threading.Event()
     signal.signal(signal.SIGINT, handle_kb_interrupt)
-    try:
+    # handle cleanup if everything goes wrong, so that the program closes properly and doesn't hang because of background threads, and can be restarted by a systemd service.
+    # this also works for ctrl c
+    try: 
         while g_running:
-            # Run the function
-            status = get_teams_status() # this takes about 400-500msec
-            #led_on_when = ['In a call', 'Busy'] # for testing
-            led_on_when = ['In a call', 'Presenting']
-            if status in led_on_when:
-                print(f"on: {status}")
-                writer.on()
-            else:
-                print(f"off: {status}")
-                writer.off()
-
-            time.sleep(2.0) # no sense hammering it too hard, but we want the light to go on quickly
-            #writer.write()
-#    except KeyboardInterrupt as e:
-#        pass
+            try:
+                # Run the function
+                status = get_teams_status() # this takes about 400-500msec
+                #led_on_when = ['In a call', 'Busy'] # for testing
+                led_on_when = ['In a call', 'Presenting']
+                if status in led_on_when:
+                    print(f"on: {status}")
+                    writer.on()
+                else:
+                    print(f"off: {status}")
+                    writer.off()
+    
+                time.sleep(2.0) # no sense hammering it too hard, but we want the light to go on quickly
+                #writer.write()
+            except websocket._exceptions.WebSocketConnectionClosedException as e:
+                print("Retrying, to handle error: 'Connection to remote host was lost'")
+            except KeyError as e:
+                print("Retrying, to handle error: 'Key Error'")
     finally:
-        #writer.stop()
-        #writer.thread.join()
-        pass
-
-    print("stopping")
-    writer.stop()
-
-    print("done")
-    for t in g_threads:
-        t.join()
-    print("doner")
+        print("finally")
+        print("stopping")
+        writer.stop()
+            
+        print("done")
+        for t in g_threads:
+            t.join()
+            print("doner")
         
 
 

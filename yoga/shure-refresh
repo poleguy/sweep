@@ -19,7 +19,7 @@ sudo openconnect ssl.shure.com --user=dietzn --authgroup=Anyconnect_Contractors 
 echo "disconnecting wg and using vpn to restart ssf/wg via wg-fpga vm in niles"
 sudo systemctl stop wg-quick@wg0
 
-echo "waiting a bit so ssh doesn't time out"
+echo "waiting a bit so ssh doesn't time out... stop now to use openconnect"
 sleep 12
 # use poleguy because he's got the ssh key
 #sudo -u poleguy ssh dietzn@192.168.233.45 ./connect_ssf_wg
@@ -31,7 +31,7 @@ sleep 12
 
 CLIENTNAME=dualie.poleguy.com
 # pull in API_TOKEN and API_USER, to avoid storing them in github
-source ~/.jenkins_token
+source ~/.jenkins_shure_com_token
 
 curl -X POST "https://jenkins.shure.com/job/FPGA/job/DevOps/job/Secure_Centos_Scripting_VM/buildWithParameters?CLIENTNAME=$CLIENTNAME" --user $API_USER:$API_TOKEN
 

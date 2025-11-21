@@ -20,7 +20,19 @@ sudo systemctl stop wg-quick@wg0-vm
 echo "waiting a bit so ssh doesn't time out"
 sleep 12
 # use poleguy because he's got the ssh key
-sudo -u poleguy ssh dietzn@192.168.233.45 ./connect_ssf_wg
+#sudo -u poleguy ssh dietzn@192.168.233.45 ./connect_ssf_wg
+
+# without any special ssh permissions on Anyconnect_Contractors,  we can
+# connect using jenkins api to trigger a job via pcnidietzn02 to wg-fpga.shurelab.com
+# token created here: https://jenkins.shure.com/user/dietzn/security/
+
+CLIENTNAME=dualie.poleguy.com
+# pull in API_TOKEN and API_USER, to avoid storing them in github
+source ~/.jenkins_shure_com_token
+
+curl -X POST "https://jenkins.shure.com/job/FPGA/job/DevOps/job/Secure_Centos_Scripting_VM/buildWithParameters?CLIENTNAME=$CLIENTNAME" --user $API_USER:$API_TOKEN
+
+
 
 echo "disconnect vpn quickly."
 sudo kill -2 $(pgrep openconnect)

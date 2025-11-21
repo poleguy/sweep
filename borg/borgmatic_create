@@ -2,5 +2,6 @@
 # copy while preserving timestamp
 # for monit
 # run as root
-cp -a /misc/seagate_ext/borg/nonce /misc/seagate_ext/borg/nonce.copy 
+#cp -a /misc/seagate_ext/borg/nonce /misc/seagate_ext/borg/nonce.copy
+cp -a /misc/expansion2025/borg/nonce /misc/expansion2025/borg/nonce.copy
 PATH=$PATH:/usr/bin:/usr/local/bin /usr/bin/nice -n 10 /root/.local/bin/borgmatic create --syslog-verbosity 1

@@ -70,8 +70,8 @@ def get_current_html(ws):
     ws.send(json.dumps(payload))
     return json.loads(ws.recv())["result"]["result"]["value"]
 
-def get_current_mentions_label(ws, timeout=2.0):
-    req_id = 42
+def get_activity_badge_count(ws, timeout=2.0):
+    req_id = 45
 
     payload = {
         "id": req_id,
@@ -79,8 +79,25 @@ def get_current_mentions_label(ws, timeout=2.0):
         "params": {
             "expression": """
 (() => {
-  const el = document.querySelector('[data-testid="list-item-activities-mentions"]');
-  return el ? el.getAttribute('aria-label') : null;
+  // Find the Activity button by aria-label
+  const activityBtn = Array.from(document.querySelectorAll('[aria-label]'))
+    .find(el => el.getAttribute('aria-label')?.toLowerCase().includes('activity'));
+
+  if (!activityBtn) return 0;
+
+  // Badge is usually a sibling or descendant near the button
+  const badge =
+    activityBtn.querySelector('.fui-Badge') ||
+    activityBtn.parentElement?.querySelector('.fui-Badge') ||
+    activityBtn.nextElementSibling?.querySelector('.fui-Badge');
+
+  if (!badge) return 0;
+
+  // Extract numeric content
+  const text = badge.textContent.trim();
+  const num = parseInt(text, 10);
+
+  return isNaN(num) ? 0 : num;
 })()
 """
         }
@@ -89,10 +106,96 @@ def get_current_mentions_label(ws, timeout=2.0):
     ws.settimeout(timeout)
     ws.send(json.dumps(payload))
 
-    # DevTools may send unrelated events; loop until our response arrives
     while True:
         msg = json.loads(ws.recv())
+        if msg.get("id") != req_id:
+            continue
 
+        try:
+            return msg["result"]["result"]["value"]
+        except (KeyError, TypeError):
+            return 0
+
+
+def get_chat_badge_count(ws, timeout=2.0):
+    req_id = 45
+
+    payload = {
+        "id": req_id,
+        "method": "Runtime.evaluate",
+        "params": {
+            "expression": """
+(() => {
+  // Find the Chat button by aria-label
+  const activityBtn = Array.from(document.querySelectorAll('[aria-label]'))
+    .find(el => el.getAttribute('aria-label')?.toLowerCase().includes('chat'));
+
+  if (!activityBtn) return 0;
+
+  // Badge is usually a sibling or descendant near the button
+  const badge =
+    activityBtn.querySelector('.fui-Badge') ||
+    activityBtn.parentElement?.querySelector('.fui-Badge') ||
+    activityBtn.nextElementSibling?.querySelector('.fui-Badge');
+
+  if (!badge) return 0;
+
+  // Extract numeric content
+  const text = badge.textContent.trim();
+  const num = parseInt(text, 10);
+
+  return isNaN(num) ? 0 : num;
+})()
+"""
+        }
+    }
+
+    ws.settimeout(timeout)
+    ws.send(json.dumps(payload))
+
+    while True:
+        msg = json.loads(ws.recv())
+        if msg.get("id") != req_id:
+            continue
+
+        try:
+            return msg["result"]["result"]["value"]
+        except (KeyError, TypeError):
+            return 0
+
+
+def mentions_is_bold(ws, timeout=2.0):
+    req_id = 44
+
+    # this may return None if in Calendar view, etc. So None and False are different.
+    payload = {
+        "id": req_id,
+        "method": "Runtime.evaluate",
+        "params": {
+            "expression": """
+(() => {
+  const item = document.querySelector('[data-testid="list-item-activities-mentions"]');
+  if (!item) return null;
+
+  // Find the text span inside the list item
+  const textEl = item.querySelector('span');
+  if (!textEl) return null;
+
+  const weight = window.getComputedStyle(textEl).fontWeight;
+
+  // Normalize: numeric weights >= 600 are effectively bold
+  const numeric = parseInt(weight, 10);
+  return (weight === 'bold') || (!isNaN(numeric) && numeric >= 600);
+})()
+"""
+        }
+    }
+
+    ws.settimeout(timeout)
+    ws.send(json.dumps(payload))
+
+    while True:
+        msg = json.loads(ws.recv())
         if msg.get("id") != req_id:
             continue
 
@@ -101,13 +204,14 @@ def get_current_mentions_label(ws, timeout=2.0):
         except (KeyError, TypeError):
             return None
 
+
 def get_teams_status():
     """Connect to Chrome DevTools via WebSocket and extract Teams status from IndexedDB."""
     ws_url = get_teams_debugger_url()
     if not ws_url:
         return
 
-    #print(f"🔌 Connecting to WebSocket: {ws_url}")
+    #print(f"Connecting to WebSocket: {ws_url}")
     ws = websocket.WebSocket()
     ws.connect(ws_url)
 
@@ -144,7 +248,7 @@ def get_teams_status():
 
 def get_teams_mamola():
     """Detect unread @mentions in Microsoft Teams."""
-    status = "unknown"
+
     ws_url = get_teams_debugger_url()
     if not ws_url:
         return "Teams not running"
@@ -153,10 +257,27 @@ def get_teams_mamola():
     ws.connect(ws_url)
 
 
-    label = get_current_mentions_label(ws)
+    is_unread = mentions_is_bold(ws)
 
-    if label and any(c.isdigit() for c in label):
+    badge_count = get_activity_badge_count(ws)
+
+    chat_badge_count = get_chat_badge_count(ws)
+
+    if is_unread is None: # can't determine if mentions is bold
+        if badge_count > 0 or chat_badge_count > 0:
+            status = "unread activity or chat"
+        else:
+            status = "unknown"
+    elif is_unread:
         status = "unread mentions"
+    else:
+        if badge_count > 0 or chat_badge_count > 0:
+            status = "unread activity or chat"
+        else:
+            status = "no unread mentions"
+
+    #if label and any(c.isdigit() for c in label):
+    #    status = "unread mentions"
 
  
     ws.close()
@@ -305,6 +426,8 @@ if __name__ == "__main__":
 
             status = get_teams_mamola() # another half second?
             if status == "unread mentions":
+                send_phone_notification(0)
+            elif status == "unread activity":
                 send_phone_notification(0)
             else: 
                 print("No unread notifications")

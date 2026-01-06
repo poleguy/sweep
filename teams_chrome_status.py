@@ -2,6 +2,16 @@
 #
 # killall chrome
 # google-chrome·--app=https://teams.microsoft.com·--remote-debugging-port=9222·--remote-allow-origins=http://localhost:9222
+
+# for elgar:
+#     google-chrome --app=https://teams.microsoft.com --remote-debugging-port=9222 --remote-allow-origins=http://localhost:9222 --user-data-dir=/home/poleguy/flippy-data/2023/remap/remote-debug-profile --profile-directory=Default
+
+# for flippy:
+# google-chrome --app=https://teams.microsoft.com --remote-debugging-port=9222 --remote-allow-origins=http://localhost:9222 --user-data-dir=/home/poleguy/remote-debug-profile --profile-directory=Default
+
+
+# DevTools remote debugging requires a non-default data directory. Specify this using --user-data-dir.
+
 # python3 teams_chrome_status.py
 
 # run from?
@@ -15,7 +25,10 @@ import requests
 import websocket
 import json
 import time
+import bash
 
+PORT = '/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0'
+PORT = None
 DEBUG_URL = "http://localhost:9222/json"
 
 def get_teams_debugger_url():
@@ -25,6 +38,8 @@ def get_teams_debugger_url():
         tabs = response.json()
         
         for tab in tabs:
+            tab_to_print = tab.get("url","")
+            #print(f"tab is: {tab_to_print}")
             if "teams.microsoft.com" in tab.get("url", ""):
                 #print(f"Found Teams tab: {tab['url']}")
                 return tab.get("webSocketDebuggerUrl")
@@ -32,7 +47,7 @@ def get_teams_debugger_url():
         print("Teams is not open in Chrome.")
         return None
     except Exception as e:
-        #print(f"Error fetching debugger URL: {e}")
+        print(f"Error fetching debugger URL: {e}")
         print("Trouble fetching debugger URL, maybe teams is not running yet?")
         return None
 
@@ -42,13 +57,50 @@ def get_current_html(ws):
         "id": 2,
         "method": "Runtime.evaluate",
         "params": {
-            "expression": "document.documentElement.outerHTML"
+            #"expression": "document.documentElement.outerHTML"
+            "expression": """
+(() => {
+  const el = document.querySelector('[aria-label^="Your profile, status"]');
+  return el ? el.getAttribute('aria-label') : null;
+})()
+"""
+
         }
     }
     ws.send(json.dumps(payload))
     return json.loads(ws.recv())["result"]["result"]["value"]
 
-    
+def get_current_mentions_label(ws, timeout=2.0):
+    req_id = 42
+
+    payload = {
+        "id": req_id,
+        "method": "Runtime.evaluate",
+        "params": {
+            "expression": """
+(() => {
+  const el = document.querySelector('[data-testid="list-item-activities-mentions"]');
+  return el ? el.getAttribute('aria-label') : null;
+})()
+"""
+        }
+    }
+
+    ws.settimeout(timeout)
+    ws.send(json.dumps(payload))
+
+    # DevTools may send unrelated events; loop until our response arrives
+    while True:
+        msg = json.loads(ws.recv())
+
+        if msg.get("id") != req_id:
+            continue
+
+        try:
+            return msg["result"]["result"]["value"]
+        except (KeyError, TypeError):
+            return None
+
 def get_teams_status():
     """Connect to Chrome DevTools via WebSocket and extract Teams status from IndexedDB."""
     ws_url = get_teams_debugger_url()
@@ -62,7 +114,7 @@ def get_teams_status():
     a = get_current_html(ws)
     status = "Unknown status"
     #print(a)
-    target = '"Your profile, status '
+    target = 'Your profile, status '
     n = len(target)
     status_idx = a.find(target)
     if status_idx == -1:
@@ -79,8 +131,8 @@ def get_teams_status():
     elif "In a call" in status_str:
         status = "In a call"
     else:
-        print(status_str)
-        print("Not handled")
+        print(f"Current status is '{status_str}' which is not handled.")
+
     #print(status)
         
 
@@ -89,6 +141,33 @@ def get_teams_status():
 
     return status
 
+
+def get_teams_mamola():
+    """Detect unread @mentions in Microsoft Teams."""
+    status = "unknown"
+    ws_url = get_teams_debugger_url()
+    if not ws_url:
+        return "Teams not running"
+
+    ws = websocket.WebSocket()
+    ws.connect(ws_url)
+
+
+    label = get_current_mentions_label(ws)
+
+    if label and any(c.isdigit() for c in label):
+        status = "unread mentions"
+
+ 
+    ws.close()
+    return status
+
+def send_phone_notification(duration): # duration indicates how long the notification has been going, to escalate volume, etc.
+    # better would be to send an email that triggers a notification.
+    #bash.bash("sudo monit restart grandstream_gt802")
+    bash.bash("notify-send Hello")
+    
+    
 # Thanks Chad Zebedee
 
 import threading
@@ -116,9 +195,11 @@ class SerialWriter:
         g_threads.append(self.thread)        
         self.led_on = False
         self.running = True
-        self.open_serial()
-        self.thread.start()
-
+        if port != None:
+            self.open_serial()
+            self.thread.start()
+        else:
+            self.serial_conn = None
     def on(self):
         """Start writing to the serial port."""
         self.led_on = True
@@ -193,7 +274,8 @@ if __name__ == "__main__":
 
     # Sending data to the serial port will turn the light on for a couple seconds
     # The light will go off if serial data stops flowing
-    writer = SerialWriter(port='/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0', message="Let's use a very long message. Why not? Let's use a very long message. Why not? Let's use a very long message. Why not? Let's use a very long message. Why not?")
+    #writer = SerialWriter(port='/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0', message="Let's use a very long message. Why not? Let's use a very long message. Why not? Let's use a very long message. Why not? Let's use a very long message. Why not?")
+    writer = SerialWriter(port=PORT, message="Let's use a very long message. Why not? Let's use a very long message. Why not? Let's use a very long message. Why not? Let's use a very long message. Why not?")
 
     # https://alexandra-zaharia.github.io/posts/how-to-stop-a-python-thread-cleanly/
     #stop_event = threading.Event()
@@ -220,6 +302,13 @@ if __name__ == "__main__":
                 print("Retrying, to handle error: 'Connection to remote host was lost'")
             except KeyError as e:
                 print("Retrying, to handle error: 'Key Error'")
+
+            status = get_teams_mamola() # another half second?
+            if status == "unread mentions":
+                send_phone_notification(0)
+            else: 
+                print("No unread notifications")
+
     finally:
         print("finally")
         print("stopping")

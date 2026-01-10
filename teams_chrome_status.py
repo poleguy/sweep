@@ -28,7 +28,7 @@ import time
 import bash
 
 PORT = '/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0'
-PORT = None
+#PORT = None
 DEBUG_URL = "http://localhost:9222/json"
 
 def get_teams_debugger_url():
@@ -234,6 +234,8 @@ def get_teams_status():
         status = "Available"
     elif "In a call" in status_str:
         status = "In a call"
+    elif "Be right back " in status_str:
+        status = "Be right back"
     else:
         print(f"Current status is '{status_str}' which is not handled.")
 
@@ -408,8 +410,8 @@ if __name__ == "__main__":
             try:
                 # Run the function
                 status = get_teams_status() # this takes about 400-500msec
-                #led_on_when = ['In a call', 'Busy'] # for testing
-                led_on_when = ['In a call', 'Presenting']
+                # Use "Be right back" for manually testing if lantern turns on correctly
+                led_on_when = ['In a call', 'Presenting', 'Be right back']
                 if status in led_on_when:
                     print(f"on: {status}")
                     writer.on()
@@ -417,7 +419,6 @@ if __name__ == "__main__":
                     print(f"off: {status}")
                     writer.off()
     
-                time.sleep(2.0) # no sense hammering it too hard, but we want the light to go on quickly
                 #writer.write()
             except websocket._exceptions.WebSocketConnectionClosedException as e:
                 print("Retrying, to handle error: 'Connection to remote host was lost'")
@@ -427,10 +428,13 @@ if __name__ == "__main__":
             status = get_teams_mamola() # another half second?
             if status == "unread mentions":
                 send_phone_notification(0)
-            elif status == "unread activity":
+            elif status == "unread activity or chat":
                 send_phone_notification(0)
             else: 
                 print("No unread notifications")
+
+            # no sense hammering it too hard, but we want the light to go on quickly, and even in case of error we don't want it using 100% resources
+            time.sleep(2.0) 
 
     finally:
         print("finally")

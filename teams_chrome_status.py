@@ -4,7 +4,7 @@
 # google-chrome·--app=https://teams.microsoft.com·--remote-debugging-port=9222·--remote-allow-origins=http://localhost:9222
 
 # for elgar:
-#     google-chrome --app=https://teams.microsoft.com --remote-debugging-port=9222 --remote-allow-origins=http://localhost:9222 --user-data-dir=/home/poleguy/flippy-data/2023/remap/remote-debug-profile --profile-directory=Default
+#     google-chrome --app=https://teams.microsoft.com --remote-debugging-port=9222 --remote-allow-origins=http://localhost:9222 --user-data-dir=/home/poleguy/remote-debug-profile --profile-directory=Default
 
 # for flippy:
 # google-chrome --app=https://teams.microsoft.com --remote-debugging-port=9222 --remote-allow-origins=http://localhost:9222 --user-data-dir=/home/poleguy/remote-debug-profile --profile-directory=Default
@@ -21,6 +21,8 @@
 # adjust ~/flippy-data/2023/reamp/hotkey-teams
 
 import signal
+import threading
+import serial
 import requests
 import websocket
 import json
@@ -106,7 +108,8 @@ def get_activity_badge_count(ws, timeout=2.0):
     ws.settimeout(timeout)
     ws.send(json.dumps(payload))
 
-    while True:
+    start = time.monotonic()
+    while time.monotonic() - start < 2.0:
         msg = json.loads(ws.recv())
         if msg.get("id") != req_id:
             continue
@@ -115,6 +118,7 @@ def get_activity_badge_count(ws, timeout=2.0):
             return msg["result"]["result"]["value"]
         except (KeyError, TypeError):
             return 0
+    raise TimeoutError("Timed out waiting for response from websocket.")
 
 
 def get_chat_badge_count(ws, timeout=2.0):
@@ -153,7 +157,8 @@ def get_chat_badge_count(ws, timeout=2.0):
     ws.settimeout(timeout)
     ws.send(json.dumps(payload))
 
-    while True:
+    start = time.monotonic()
+    while time.monotonic() - start < 2.0:
         msg = json.loads(ws.recv())
         if msg.get("id") != req_id:
             continue
@@ -162,6 +167,7 @@ def get_chat_badge_count(ws, timeout=2.0):
             return msg["result"]["result"]["value"]
         except (KeyError, TypeError):
             return 0
+    raise TimeoutError("Timed out waiting for response from websocket.")
 
 
 def mentions_is_bold(ws, timeout=2.0):
@@ -194,7 +200,8 @@ def mentions_is_bold(ws, timeout=2.0):
     ws.settimeout(timeout)
     ws.send(json.dumps(payload))
 
-    while True:
+    start = time.monotonic()
+    while time.monotonic() - start < 2.0:
         msg = json.loads(ws.recv())
         if msg.get("id") != req_id:
             continue
@@ -203,6 +210,7 @@ def mentions_is_bold(ws, timeout=2.0):
             return msg["result"]["result"]["value"]
         except (KeyError, TypeError):
             return None
+    raise TimeoutError("Timed out waiting for response from websocket.")
 
 
 def get_teams_status():
@@ -288,14 +296,16 @@ def get_teams_mamola():
 def send_phone_notification(duration): # duration indicates how long the notification has been going, to escalate volume, etc.
     # better would be to send an email that triggers a notification.
     #bash.bash("sudo monit restart grandstream_gt802")
-    bash.bash("notify-send Hello")
-    
+    bash.bash('notify-send "Activity or Chat Notification"')
+
+def send_phone_notification_mention(duration): # duration indicates how long the notification has been going, to escalate volume, etc.
+    # better would be to send an email that triggers a notification.
+    #bash.bash("sudo monit restart grandstream_gt802")
+    bash.bash('notify-send "Mention !!!!! Mention !!!!! Mention !!!!!"')
+
     
 # Thanks Chad Zebedee
 
-import threading
-import time
-import serial
 
 g_threads = []
 g_running = True
@@ -318,7 +328,7 @@ class SerialWriter:
         g_threads.append(self.thread)        
         self.led_on = False
         self.running = True
-        if port != None:
+        if port is not None:
             self.open_serial()
             self.thread.start()
         else:
@@ -340,18 +350,24 @@ class SerialWriter:
         #self.thread.join()
 
     def open_serial(self):
-        self.serial_conn = serial.Serial(self.port, self.baudrate, timeout=1)
+        # If already open, close it first
+        if hasattr(self, 'serial_conn') and self.serial_conn:
+            try:
+                if self.serial_conn.is_open:
+                    self.serial_conn.close()
+            except serial.SerialException:
+                pass
         try:
-            self.serial_conn.open()
-            if self.serial_conn.isOpen():
-                return True
+            self.serial_conn = serial.Serial(self.port, self.baudrate, timeout=1)
         except serial.SerialException as e:
-            print("serial exception")
-            pass
+            print("serial exception on open, is port disconnected?: ", e)
+            self.serial_conn = None
             
 
     def _write(self):
-        """Internal loop that writes to the serial port at the specified interval."""
+        """Internal loop that writes to the serial port at the specified interval.
+        If the write fails, delay for a second and try to reopen the port.
+        """
         while self.running:
             try:
                 while self.running:
@@ -360,14 +376,15 @@ class SerialWriter:
                     while self.led_on:
                         if self.serial_conn:
                             self.serial_conn.write((self.message + "\n").encode())
-                        else:
+                        else:                 
+                            time.sleep(1.0)           
                             self.open_serial()
                         #print("...")
                         time.sleep(0.1)
                     #print('idle')
                     time.sleep(0.1)
             except serial.SerialException as e:
-                print(f"Serial error: {e}")
+                print(f"Serial error, was port unplugged?: {e}")
                 if self.serial_conn:
                     self.serial_conn.close()
                     self.serial_conn = None
@@ -418,20 +435,28 @@ if __name__ == "__main__":
                 else:
                     print(f"off: {status}")
                     writer.off()
-    
                 #writer.write()
+            except TimeoutError as e:
+                print(f"TimeoutError: {e}. Skipping this cycle.")
             except websocket._exceptions.WebSocketConnectionClosedException as e:
                 print("Retrying, to handle error: 'Connection to remote host was lost'")
             except KeyError as e:
                 print("Retrying, to handle error: 'Key Error'")
 
-            status = get_teams_mamola() # another half second?
-            if status == "unread mentions":
-                send_phone_notification(0)
-            elif status == "unread activity or chat":
-                send_phone_notification(0)
-            else: 
-                print("No unread notifications")
+            try:
+                status = get_teams_mamola() # another half second?
+                if status == "unread mentions":
+                    send_phone_notification_mention(0)
+                elif status == "unread activity or chat":
+                    send_phone_notification(0)
+                else: 
+                    print("No unread notifications")
+            except TimeoutError as e:
+                print(f"TimeoutError in get_teams_mamola: {e}. Skipping notification check.")
+            except websocket._exceptions.WebSocketConnectionClosedException as e:
+                print("Retrying get_teams_mamola: Connection to remote host was lost")
+            except KeyError as e:
+                print("Retrying get_teams_mamola: Key Error")
 
             # no sense hammering it too hard, but we want the light to go on quickly, and even in case of error we don't want it using 100% resources
             time.sleep(2.0) 

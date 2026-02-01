@@ -43,33 +43,49 @@ module my_code #(
         background_color = {v, v >> 1, v >> 3};
     end
 
-    integer x, y;
+    logic updating;
+    logic [6:0] ux; // 0..79
+    logic [5:0] uy; // 0..58 (we skip last row)
+
     always_ff @(posedge clk) begin
         if (rst) begin
+            updating <= 0;
+            ux <= 0;
+            uy <= 0;
             old_vsync <= 0;
-            lfsr <= 8'hA5;
-            spark_div <= 0;
-            for (y = 0; y < FH; y = y + 1)
-                for (x = 0; x < FW; x = x + 1)
-                    fire[y][x] <= 0;
         end else begin
-            if (!vsync && old_vsync) begin
-                // propagate fire upward
-                for (y = 0; y < FH-1; y = y + 1)
-                    for (x = 0; x < FW; x = x + 1)
-                        fire[y][x] <= fire[y+1][x] - (x & 1);
+            // start update on vsync rising edge (enter VBLANK)
+            if (vsync && !old_vsync) begin
+                updating <= 1;
+                ux <= 0;
+                uy <= 0;
+            end
 
-                // slow sparks (≈ every 10 frames)
-                spark_div <= spark_div + 1;
-                if (spark_div == 0) begin
-                    // LFSR
-                    lfsr <= {lfsr[6:0],
-                             lfsr[7]^lfsr[5]^lfsr[4]^lfsr[3]};
+            if (updating) begin
+                fire[uy][ux] <= fire[uy+1][ux] - (ux & 1);
 
-                    // bottom-row sparks
-                    fire[FH-1][lfsr[6:0] % FW] <= 8'hFF;
+                if (ux == FW-1) begin
+                    ux <= 0;
+                    if (uy == FH-2) begin
+                        updating <= 0; // done
+                        uy <= 0;
+                    end else begin
+                        uy <= uy + 1;
+                    end
+                end else begin
+                    ux <= ux + 1;
                 end
             end
+
+            // bottom sparks (slow)
+            if (vsync && !old_vsync) begin
+                d <= d + 1;
+                if (!d) begin
+                    l <= {l[6:0],l[7]^l[5]^l[4]^l[3]};
+                    fire[FH-1][l[6:0]] <= 8'hFF;
+                end
+            end
+
             old_vsync <= vsync;
         end
     end

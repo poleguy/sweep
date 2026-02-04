@@ -27,8 +27,12 @@ module my_code #(
     logic [7:0] fire[FH-1:0][FW-1:0];
 
     logic old_vsync;
-    logic [7:0] lfsr = 8'hA5;
-    logic [3:0] spark_div; // slows sparks ~10x
+    logic [7:0] lfsr;
+    logic [3:0] spark_div;
+
+    logic updating;
+    logic [6:0] ux;
+    logic [5:0] uy;
 
     assign char = 0;
     assign foreground_color = 24'hFFFFFF;
@@ -37,22 +41,23 @@ module my_code #(
     wire [6:0] fx = px[9:3]; // /8 → 0..79
     wire [5:0] fy = py[9:3]; // /8 → 0..59
 
-    always_comb begin
-        logic [7:0] v;
-        v = fire[fy][fx];
-        background_color = {v, v >> 1, v >> 3};
-    end
+    wire [7:0] v = fire[fy][fx];
+    assign background_color = {v, v >> 1, v >> 3};
 
-    logic updating;
-    logic [6:0] ux; // 0..79
-    logic [5:0] uy; // 0..58 (we skip last row)
+    integer x,y;
 
     always_ff @(posedge clk) begin
         if (rst) begin
+            old_vsync <= 0;
             updating <= 0;
             ux <= 0;
             uy <= 0;
-            old_vsync <= 0;
+            spark_div <= 0;
+            lfsr <= 8'hA5;
+
+          //  for (y=0; y<FH; y=y+1)
+          //      for (x=0; x<FW; x=x+1)
+          //          fire[y][x] <= 0;
         end else begin
             // start update on vsync rising edge (enter VBLANK)
             if (vsync && !old_vsync) begin
@@ -61,13 +66,14 @@ module my_code #(
                 uy <= 0;
             end
 
+            // scroll fire upward across many clocks
             if (updating) begin
                 fire[uy][ux] <= fire[uy+1][ux] - (ux & 1);
 
                 if (ux == FW-1) begin
                     ux <= 0;
                     if (uy == FH-2) begin
-                        updating <= 0; // done
+                        updating <= 0;
                         uy <= 0;
                     end else begin
                         uy <= uy + 1;
@@ -77,17 +83,17 @@ module my_code #(
                 end
             end
 
-            // bottom sparks (slow)
-            if (vsync && !old_vsync) begin
-                d <= d + 1;
-                if (!d) begin
-                    l <= {l[6:0],l[7]^l[5]^l[4]^l[3]};
-                    fire[FH-1][l[6:0]] <= 8'hFF;
+            // bottom sparks (slow, only when not updating)
+            if (vsync && !old_vsync && !updating) begin
+                spark_div <= spark_div + 1;
+                if (!spark_div) begin
+                    lfsr <= {lfsr[6:0],
+                             lfsr[7]^lfsr[5]^lfsr[4]^lfsr[3]};
+                    fire[FH-1][lfsr[6:0]] <= 8'hFF;
                 end
             end
 
             old_vsync <= vsync;
         end
     end
-
 endmodule

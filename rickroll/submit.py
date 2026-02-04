@@ -1,5 +1,6 @@
 import sys
 from mastodon import Mastodon
+import time
 
 INSTANCE = "https://mastodon.social"
 BOT = "@icepi-zero-bot@wafrn.jcm.re"
@@ -13,7 +14,7 @@ def split_file_by_lines(path):
     current = ""
 
     for line in lines:
-        if len(current) + len(line) > MAX_LEN:
+        if len(current) + len(line) > MAX_LEN - len(BOT) - 1:
             chunks.append(current.rstrip())
             current = ""
         current += line
@@ -43,6 +44,8 @@ def main(filename):
         last_id = status["id"]
         print(f"Sent {i}/{len(parts)}")
 
+    # try to make sure bot doesn't see the ask until all the other messages get there.
+    #time.sleep(60)
     # Final summon
     mastodon.status_post(
         f"!ask {BOT}",

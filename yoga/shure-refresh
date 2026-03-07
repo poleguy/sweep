@@ -20,6 +20,7 @@ echo "disconnecting wg and using vpn to restart ssf/wg via wg-fpga vm in niles"
 sudo systemctl stop wg-quick@wg0
 
 echo "waiting a bit so ssh doesn't time out... stop now to use openconnect"
+#exit
 sleep 12
 # use poleguy because he's got the ssh key
 #sudo -u poleguy ssh dietzn@192.168.233.45 ./connect_ssf_wg

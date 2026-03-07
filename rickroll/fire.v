@@ -20,6 +20,7 @@ module my_code #(
     output logic [23:0] background_color
 );
 
+    // version 1
     // Fire resolution: 80x60 → scaled to 640x480
     localparam int FW = 80;
     localparam int FH = 60;

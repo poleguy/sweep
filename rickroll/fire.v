@@ -20,7 +20,7 @@ module my_code #(
     output logic [23:0] background_color
 );
 
-    // version 1
+    // version 2.0
     // Fire resolution: 80x60 → scaled to 640x480
     localparam int FW = 80;
     localparam int FH = 60;
@@ -29,7 +29,8 @@ module my_code #(
 
     logic old_vsync;
     logic [7:0] lfsr;
-    logic [3:0] spark_div;
+    // length of div slows frequency of sparks
+    logic [4:0] spark_div;
 
     logic updating;
     logic [6:0] ux;
@@ -42,7 +43,8 @@ module my_code #(
     wire [6:0] fx = px[9:3]; // /8 → 0..79
     wire [5:0] fy = py[9:3]; // /8 → 0..59
 
-    wire [7:0] v = fire[fy][fx];
+    wire [7:0] v = fire[fy][fx];        
+    // Map intensity to flame color: red dominant, green half, blue low
     assign background_color = {v, v >> 1, v >> 3};
 
     integer x,y;
@@ -69,7 +71,8 @@ module my_code #(
 
             // scroll fire upward across many clocks
             if (updating) begin
-                fire[uy][ux] <= fire[uy+1][ux] - (ux & 1);
+                // slight decay based on lsb of x coordinate times 2
+                fire[uy][ux] <= fire[uy+1][ux] - (ux & 1)<<1;
 
                 if (ux == FW-1) begin
                     ux <= 0;

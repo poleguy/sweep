@@ -33,7 +33,7 @@ function notify_if_inactive() {
     #echo "notify_if_inactive"
     if [[ "$MY_TERM_WIN_ID" != "$active_win_id" ]]; then
         echo "command completed in background window"
-        espeak "command complete"
+        espeak "done"
     fi
     return $exit_status
 }

@@ -14,6 +14,25 @@ if [[ ! -f "$DEB_FILE" ]]; then
     exit 1
 fi
 
+PKG_NAME="$(basename "$DEB_FILE")"
+
+confirm_install() {
+    if command -v zenity >/dev/null 2>&1; then
+        zenity --question \
+            --title="Install Package" \
+            --width=400 \
+            --text="Install package:\n\n$PKG_NAME\n\nThis will run:\nsudo apt install \"$DEB_FILE\""
+    else
+        echo "Install package: $PKG_NAME"
+        read -rp "Proceed with installation? [y/N] " ans
+        [[ "${ans,,}" == "y" || "${ans,,}" == "yes" ]]
+    fi
+}
+
+if ! confirm_install; then
+    exit 0
+fi
+
 # Pick a terminal emulator automatically
 TERMINAL=""
 for t in gnome-terminal konsole xfce4-terminal x-terminal-emulator xterm; do
@@ -28,7 +47,7 @@ if [[ -z "$TERMINAL" ]]; then
     exit 1
 fi
 
-CMD="echo Installing: '$DEB_FILE'; echo; sudo apt install -y '$DEB_FILE'; echo; read -p 'Press Enter to close...'"
+CMD="echo Installing: '$DEB_FILE'; echo; sudo apt install '$DEB_FILE'; echo; read -p 'Press Enter to close...'"
 
 case "$TERMINAL" in
     gnome-terminal)

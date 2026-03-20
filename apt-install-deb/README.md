@@ -1,8 +1,11 @@
-This is a bash script to replace gdebi with a call to sudo apt and a pop-up terminal.
+This is a bash script that can handle installing .deb files with a confirmation dialog and
+then a call to 'sudo apt install' in a pop-up terminal.
+
+Motivation:
 
 I wanted to be able to install .deb files from a firefox download without typing extra stuff at the command line.
 gdebi was needed because ubuntu's software center wasn't installing downloaded deb files at all.
-gdebi worked for a while, but recently  started failing with dependency errors, and it seems abandoned.
+gdebi worked for a while, but recently started failing with dependency errors, and it seems abandoned.
 
 so now we have apt-instal-deb
 

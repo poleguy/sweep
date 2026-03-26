@@ -59,35 +59,43 @@ def move_windows_to_monitor(source_monitor, target_monitor):
         print(f"moving {window}")
         move_window_to_monitor(window, target_monitor)
 
-def launch_and_move_application(app_name, target_monitor):
+def launch_and_move_application(
+        WINDOW_STR,
+        WM_CLASS, target_monitor):
     """Launch an application and move it to the target monitor in fullscreen."""
     # Launch the application
     subprocess.Popen(app_name, shell=True)
     time.sleep(2)  # Wait for the application to open
 
     # Find the application's window
-    output = subprocess.check_output("wmctrl -l", shell=True, text=True)
+    output = subprocess.check_output("wmctrl -xl", shell=True, text=True)
     for line in output.splitlines():
-        if app_name in line:
-            window_id = line.split()[0]
-            move_window_to_monitor(window_id, target_monitor)
-            subprocess.run(f"wmctrl -i -r {window_id} -b add,fullscreen", shell=True)
-            break
+        if WINDOW_STR in line:
+            wm_class_found = line.split()[2]
+            if wm_class_found == WM_CLASS:
+                window_id = line.split()[0]
+                move_window_to_monitor(window_id, target_monitor)
+                subprocess.run(f"wmctrl -i -r {window_id} -b add,fullscreen", shell=True)
+                break
 
-def move_application(app_name, target_monitor):
+def move_application(
+        WINDOW_STR,
+        WM_CLASS, target_monitor):
+
     """ move it to the target monitor in fullscreen."""
 
     # Find the application's window
-    output = subprocess.check_output("wmctrl -l", shell=True, text=True)
+    output = subprocess.check_output("wmctrl -xl", shell=True, text=True)
     for line in output.splitlines():
-        print(line)
-        if app_name in line:
-            window_id = line.split()[0]
-            unmaximize_window(window_id)
-            move_window_to_monitor(window_id, target_monitor)
-            #subprocess.run(f"wmctrl -i -r {window_id} -b add,fullscreen", shell=True)
-            subprocess.run(f"wmctrl -i -r {window_id} -b add,maximized_vert,maximized_horz", shell=True)
-            break
+        if WINDOW_STR in line:
+            wm_class_found = line.split()[2]
+            if wm_class_found == WM_CLASS:
+                window_id = line.split()[0]
+                unmaximize_window(window_id)
+                move_window_to_monitor(window_id, target_monitor)
+                #subprocess.run(f"wmctrl -i -r {window_id} -b add,fullscreen", shell=True)
+                subprocess.run(f"wmctrl -i -r {window_id} -b add,maximized_vert,maximized_horz", shell=True)
+                break
 
 
 def is_window_maximized(window_id):
@@ -164,8 +172,9 @@ def main():
     move_windows_to_monitor(source_monitor, target_monitor)
 
     # Move specific application (e.g., "firefox") to the target monitor
-    app_name = "Krita"
-    move_application(app_name, source_monitor)
+    WINDOW_STR="Krita"
+    WM_CLASS="krita.krita"
+    move_application(WINDOW_STR, WM_CLASS, source_monitor)
 
 if __name__ == "__main__":
     main()
